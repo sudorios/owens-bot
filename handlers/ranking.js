@@ -1,12 +1,10 @@
-module.exports = (message, puntos) => {
-    if (puntos.size === 0) {
+const Punto = require('../models/Punto');
+module.exports = async (message) => {
+    const top = await Punto.find().sort({ score: -1 }).limit(10);
+    if (top.length === 0) {
         return message.reply('📉 Aún no hay puntuaciones registradas.');
     }
-    const ranking = [...puntos.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .map(([userID, pts], i) => `#${i + 1} <@${userID}> — ${pts} pt${pts > 1 ? 's' : ''}`)
-        .slice(0, 10);
-
+    const ranking = top.map((p, i) => `#${i + 1} ${p.username} — ${p.score} pt${p.score > 1 ? 's' : ''}`);
     message.channel.send({
         content: `📊 **Ranking General de Apuestas:**\n${ranking.join('\n')}`
     });

@@ -8,9 +8,11 @@ const handleGuardarResultado = require('./handlers/guardarResultado');
 const handleFinalizarQuiniela = require('./handlers/finalizarQuiniela');
 const handleRanking = require('./handlers/ranking');
 
+const connectDB = require('./db');
+connectDB();
+
 const quinielas = new Map();
 const apuestas = new Map();
-const puntos = new Map();
 const resultados = new Map();
 
 const client = new Client({
@@ -43,11 +45,11 @@ client.on('messageCreate', async (message) => {
     }
 
     if (message.content.startsWith('!finalizar')) {
-        return handleFinalizarQuiniela(message, quinielas, apuestas, resultados, puntos);
+        return handleFinalizarQuiniela(message, quinielas, apuestas, resultados);
     }
 
     if (message.content.startsWith('!ranking')) {
-        return handleRanking(message, puntos);
+        return handleRanking(message);
     }
 
 });

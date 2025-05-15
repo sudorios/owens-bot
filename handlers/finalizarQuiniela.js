@@ -1,4 +1,6 @@
-module.exports = (message, quinielas, apuestas, resultados, puntos) => {
+
+const Punto = require('../models/Punto');
+module.exports = async (message, quinielas, apuestas, resultados) => {
     const partes = message.content.split(' ');
     const nombre = partes[1];
     if (!nombre) return message.reply('❗ Usa: `!finalizar <nombre_quiniela>`');
@@ -24,8 +26,13 @@ module.exports = (message, quinielas, apuestas, resultados, puntos) => {
         let ganadores = [];
         for (const [userID, emoji] of votos.entries()) {
             if (emoji === emojiGanador) {
-                const total = puntos.get(userID) || 0;
-                puntos.set(userID, total + 1);
+                let punto = await Punto.findOne({ userID });
+                if (!punto) {
+                    punto = new Punto({ userID, username: `<@${userID}>`, score: 1 });
+                } else {
+                    punto.score += 1;
+                }
+                await punto.save();
                 const prev = puntajeEvento.get(userID) || 0;
                 puntajeEvento.set(userID, prev + 1);
                 ganadores.push(`<@${userID}> (+1 pt)`);
