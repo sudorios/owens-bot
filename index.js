@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+console.log('🔐 DISCORD_TOKEN:', process.env.DISCORD_TOKEN ? 'OK' : '❌ MISSING');
+console.log('🗄️ MONGODB_URI:', process.env.MONGODB_URI ? 'OK' : '❌ MISSING');
+
 const { Client, GatewayIntentBits } = require('discord.js');
 
 const handleCrearQuiniela = require('./handlers/crearQuiniela');
