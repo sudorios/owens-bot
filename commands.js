@@ -10,13 +10,13 @@ const handleVerCalificacion = require('./handlers/viewRating');
 const handleDonar = require('./handlers/donate');
 
 module.exports = (quinielas, apuestas, resultados) => ({
-    createPool: (msg) => handleCrearQuiniela(msg, quinielas),
+    createpool: (msg) => handleCrearQuiniela(msg, quinielas),
     match: (msg) => handleAgregarCombate(msg, quinielas, apuestas),
     result: (msg) => handleGuardarResultado(msg, quinielas, resultados),
     finish: (msg) => handleFinalizarQuiniela(msg, quinielas, apuestas, resultados),
     ranking: (msg) => handleRanking(msg),
     help: (msg) => handleHelp(msg),
     rate: (msg) => handleCalificar(msg),
-    viewRating: (msg) => handleVerCalificacion(msg),
+    viewrating: (msg) => handleVerCalificacion(msg),
     donate: (msg) => handleDonar(msg),
 });
