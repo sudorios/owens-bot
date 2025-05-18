@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const comandos = require('../commands');
+const comandos = require('../help_commands');
 
 module.exports = async (message) => {
     const embed = new EmbedBuilder()

@@ -1,23 +1,17 @@
 require('dotenv').config();
 
 const { Client, GatewayIntentBits } = require('discord.js');
-
-const handleCrearQuiniela = require('./handlers/crearQuiniela');
-const handleAgregarCombate = require('./handlers/agregarCombate');
-const handleGuardarResultado = require('./handlers/guardarResultado');
-const handleFinalizarQuiniela = require('./handlers/finalizarQuiniela');
-const handleRanking = require('./handlers/ranking');
-const handleHelp = require('./handlers/help');
-const connectDB = require('./db');
-const handleCalificar = require('./handlers/calificar');
+const createCommands = require('./commands');
 const Calificacion = require('./models/Calificacion');
-const handleVerCalificacion = require('./handlers/vercalificacion');
-
-connectDB();
+const connectDB = require('./db');
 
 const quinielas = new Map();
 const apuestas = new Map();
 const resultados = new Map();
+
+const commands = createCommands(quinielas, apuestas, resultados);
+
+connectDB();
 
 const client = new Client({
     intents: [
@@ -32,70 +26,23 @@ client.once('ready', () => {
     console.log(`✅ Bot conectado como ${client.user.tag}`);
 });
 
-
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
-    if (message.content.startsWith('!crearquiniela')) {
-        return handleCrearQuiniela(message, quinielas);
-    }
+    if (!message.content.startsWith('!')) return;
 
-    if (message.content.startsWith('!combate')) {
-        return handleAgregarCombate(message, quinielas, apuestas);
-    }
+    const args = message.content.slice(1).split(/ +/);
+    const command = args.shift().toLowerCase();
 
-    if (message.content.startsWith('!resultado')) {
-        return handleGuardarResultado(message, quinielas, resultados);
-    }
-
-    if (message.content.startsWith('!finalizar')) {
-        return handleFinalizarQuiniela(message, quinielas, apuestas, resultados);
-    }
-
-    if (message.content.startsWith('!ranking')) {
-        return handleRanking(message);
-    }
-
-    if (message.content.startsWith('!help')) {
-        return handleHelp(message);
-    }
-
-    if (message.content.startsWith('!calificar')) {
-        return handleCalificar(message);
-    }
-
-    if (message.content.startsWith('!vercalificacion')) return handleVerCalificacion(message);
-
-});
-
-client.on('messageReactionAdd', async (reaction, user) => {
-    if (user.bot) return;
-
-    try {
-        if (reaction.partial) await reaction.fetch();
-        if (reaction.message.partial) await reaction.message.fetch();
-
-        const message = reaction.message;
-        if (message.author.id !== client.user.id) return;
-
-        const combates = [...quinielas.values()].flat();
-        const esCombate = combates.find(c => c.mensajeID === message.id);
-        if (!esCombate) return;
-
-        const todas = message.reactions.cache.filter(r => r.users.cache.has(user.id));
-        if (todas.size > 1) {
-            for (const r of todas.values()) {
-                if (r.emoji.name !== reaction.emoji.name) {
-                    await r.users.remove(user.id);
-                }
-            }
+    if (commands[command]) {
+        try {
+            await commands[command](message);
+        } catch (err) {
+            console.error(`❌ Error en comando !${command}:`, err);
+            message.reply('❌ Hubo un error al ejecutar ese comando.');
         }
-
-        const votos = apuestas.get(message.id);
-        if (votos) votos.set(user.id, reaction.emoji.name);
-
-    } catch (err) {
-        console.error('❌ Error en reacción:', err);
+    } else {
+        message.reply(`❌ Comando \`!${command}\` no reconocido. Usa \`!help\` para ver la lista de comandos disponibles.`);
     }
 });
 
@@ -108,25 +55,41 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
         const { message } = reaction;
 
-        const calificacion = await Calificacion.findOne({ mensajeID: message.id });
-        if (!calificacion) return;
+        if (message.author.id !== client.user.id) return;
 
-        const validEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
-        if (!validEmojis.includes(reaction.emoji.name)) return;
-
-        const valor = validEmojis.indexOf(reaction.emoji.name) + 1;
-
-        const votoExistenteIndex = calificacion.votos.findIndex(v => v.userID === user.id);
-        if (votoExistenteIndex !== -1) {
-            calificacion.votos[votoExistenteIndex].calificacion = valor;
-        } else {
-            calificacion.votos.push({ userID: user.id, calificacion: valor });
+        const combates = [...quinielas.values()].flat();
+        const esCombate = combates.find(c => c.mensajeID === message.id);
+        if (esCombate) {
+            const todas = message.reactions.cache.filter(r => r.users.cache.has(user.id));
+            if (todas.size > 1) {
+                for (const r of todas.values()) {
+                    if (r.emoji.name !== reaction.emoji.name) {
+                        await r.users.remove(user.id);
+                    }
+                }
+            }
+            const votos = apuestas.get(message.id);
+            if (votos) votos.set(user.id, reaction.emoji.name);
         }
-        await calificacion.save();
+
+        const calificacion = await Calificacion.findOne({ mensajeID: message.id });
+        if (calificacion) {
+            const validEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
+            if (!validEmojis.includes(reaction.emoji.name)) return;
+
+            const valor = validEmojis.indexOf(reaction.emoji.name) + 1;
+
+            const votoExistenteIndex = calificacion.votos.findIndex(v => v.userID === user.id);
+            if (votoExistenteIndex !== -1) {
+                calificacion.votos[votoExistenteIndex].calificacion = valor;
+            } else {
+                calificacion.votos.push({ userID: user.id, calificacion: valor });
+            }
+            await calificacion.save();
+        }
 
     } catch (err) {
-        console.error('❌ Error en la reacción de calificación:', err);
+        console.error('❌ Error en reacción:', err);
     }
 });
-
 client.login(process.env.DISCORD_TOKEN);

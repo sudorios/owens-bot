@@ -1,26 +1,22 @@
-module.exports = {
-    crearquiniela: {
-        uso: '!crearquiniela <nombre>',
-        descripcion: 'Crea una nueva quiniela para este servidor.'
-    },
-    combate: {
-        uso: '!combate <quiniela> <pelea>',
-        descripcion: 'Publica un combate para que los usuarios apuesten con emojis.'
-    },
-    resultado: {
-        uso: '!resultado <mensajeID> <emoji>',
-        descripcion: 'Define el emoji ganador del combate.'
-    },
-    finalizar: {
-        uso: '!finalizar <quiniela>',
-        descripcion: 'Finaliza la quiniela, asigna puntos y muestra el ranking del evento.'
-    },
-    ranking: {
-        uso: '!ranking',
-        descripcion: 'Muestra el ranking global del servidor actual.'
-    },
-    help: {
-        uso: '!help',
-        descripcion: 'Muestra esta ayuda.'
-    }
-};
+// commands.js
+const handleCrearQuiniela = require('./handlers/crearQuiniela');
+const handleAgregarCombate = require('./handlers/agregarCombate');
+const handleGuardarResultado = require('./handlers/guardarResultado');
+const handleFinalizarQuiniela = require('./handlers/finalizarQuiniela');
+const handleRanking = require('./handlers/ranking');
+const handleHelp = require('./handlers/help');
+const handleCalificar = require('./handlers/calificar');
+const handleVerCalificacion = require('./handlers/vercalificacion');
+const handleDonar = require('./handlers/donar');
+
+module.exports = (quinielas, apuestas, resultados) => ({
+    crearquiniela: (msg) => handleCrearQuiniela(msg, quinielas),
+    combate: (msg) => handleAgregarCombate(msg, quinielas, apuestas),
+    resultado: (msg) => handleGuardarResultado(msg, quinielas, resultados),
+    finalizar: (msg) => handleFinalizarQuiniela(msg, quinielas, apuestas, resultados),
+    ranking: (msg) => handleRanking(msg),
+    help: (msg) => handleHelp(msg),
+    calificar: (msg) => handleCalificar(msg),
+    vercalificacion: (msg) => handleVerCalificacion(msg),
+    donar: (msg) => handleDonar(msg),
+});
