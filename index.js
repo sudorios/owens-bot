@@ -7,8 +7,12 @@ const handleAgregarCombate = require('./handlers/agregarCombate');
 const handleGuardarResultado = require('./handlers/guardarResultado');
 const handleFinalizarQuiniela = require('./handlers/finalizarQuiniela');
 const handleRanking = require('./handlers/ranking');
-
+const handleHelp = require('./handlers/help');
 const connectDB = require('./db');
+const handleCalificar = require('./handlers/calificar');
+const Calificacion = require('./models/Calificacion');
+const handleVerCalificacion = require('./handlers/vercalificacion');
+
 connectDB();
 
 const quinielas = new Map();
@@ -52,6 +56,16 @@ client.on('messageCreate', async (message) => {
         return handleRanking(message);
     }
 
+    if (message.content.startsWith('!help')) {
+        return handleHelp(message);
+    }
+
+    if (message.content.startsWith('!calificar')) {
+        return handleCalificar(message);
+    }
+
+    if (message.content.startsWith('!vercalificacion')) return handleVerCalificacion(message);
+
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
@@ -85,5 +99,34 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 });
 
+client.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot) return;
+
+    try {
+        if (reaction.partial) await reaction.fetch();
+        if (reaction.message.partial) await reaction.message.fetch();
+
+        const { message } = reaction;
+
+        const calificacion = await Calificacion.findOne({ mensajeID: message.id });
+        if (!calificacion) return;
+
+        const validEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
+        if (!validEmojis.includes(reaction.emoji.name)) return;
+
+        const valor = validEmojis.indexOf(reaction.emoji.name) + 1;
+
+        const votoExistenteIndex = calificacion.votos.findIndex(v => v.userID === user.id);
+        if (votoExistenteIndex !== -1) {
+            calificacion.votos[votoExistenteIndex].calificacion = valor;
+        } else {
+            calificacion.votos.push({ userID: user.id, calificacion: valor });
+        }
+        await calificacion.save();
+
+    } catch (err) {
+        console.error('❌ Error en la reacción de calificación:', err);
+    }
+});
 
 client.login(process.env.DISCORD_TOKEN);
