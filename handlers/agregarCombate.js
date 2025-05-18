@@ -3,8 +3,9 @@ module.exports = async (message, quinielas, apuestas) => {
     const partes = message.content.split(' ');
     const nombre = partes[1];
     const contenido = partes.slice(2).join(' ');
-    if (!quinielas.has(nombre)) {
-        return message.reply('❗ Esa quiniela no existe. Usa `!crearquiniela` primero.');
+    const key = `${message.guild.id}:${nombre}`;
+    if (!quinielas.has(key)) {
+        return message.reply('❗ Esa quiniela no existe en este servidor. Usa `!crearquiniela` primero.');
     }
     const regex = emojiRegex();
     const emojis = [];
@@ -18,7 +19,7 @@ module.exports = async (message, quinielas, apuestas) => {
             await msg.react(emoji);
         }
         const combate = { mensajeID: msg.id, emojis };
-        quinielas.get(nombre).push(combate);
+        quinielas.get(key).push(combate);
         apuestas.set(msg.id, new Map());
         message.reply(`✅ Combate agregado a la quiniela **${nombre}**`);
     } catch (err) {

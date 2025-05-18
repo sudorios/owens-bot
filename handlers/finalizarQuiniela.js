@@ -1,10 +1,10 @@
-
 const Punto = require('../models/Punto');
 module.exports = async (message, quinielas, apuestas, resultados) => {
     const partes = message.content.split(' ');
     const nombre = partes[1];
     if (!nombre) return message.reply('❗ Usa: `!finalizar <nombre_quiniela>`');
-    const combates = quinielas.get(nombre);
+    const key = `${message.guild.id}:${nombre}`;
+    const combates = quinielas.get(key);
     if (!combates || combates.length === 0) {
         return message.reply('⚠️ Esa quiniela no existe o no tiene combates.');
     }
@@ -26,9 +26,9 @@ module.exports = async (message, quinielas, apuestas, resultados) => {
         let ganadores = [];
         for (const [userID, emoji] of votos.entries()) {
             if (emoji === emojiGanador) {
-                let punto = await Punto.findOne({ userID });
+                let punto = await Punto.findOne({ guildID: message.guild.id, userID });
                 if (!punto) {
-                    punto = new Punto({ userID, username: `<@${userID}>`, score: 1 });
+                    punto = new Punto({ guildID: message.guild.id, userID, username: `<@${userID}>`, score: 1 });
                 } else {
                     punto.score += 1;
                 }
@@ -44,7 +44,7 @@ module.exports = async (message, quinielas, apuestas, resultados) => {
             ? `🔚 Combate ${mensajeID}: nadie acertó`
             : `🏆 Combate ${mensajeID} - Ganadores: ${ganadores.join(', ')}`);
     }
-    quinielas.delete(nombre);
+    quinielas.delete(key);
     const rankingEvento = [...puntajeEvento.entries()]
         .sort((a, b) => b[1] - a[1])
         .map(([userID, pts], i) => `#${i + 1} <@${userID}> — ${pts} pt${pts > 1 ? 's' : ''}`);
