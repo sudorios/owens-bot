@@ -1,9 +1,7 @@
 module.exports = {
     crearquiniela: {
         uso: '!createpool <name>',
-        descripcion: 'Creates a new betting pool for this server.',
-        yaExiste: '⚠️ A betting pool with that name already exists.',
-        mensajeCreada: '🗂️ Betting pool **{nombre}** created. Now add matches with `!match {nombre} <fight>`'
+        descripcion: 'Creates a new betting pool for this server.'
     },
     combate: {
         uso: '!match <pool> <fight>',
@@ -36,9 +34,5 @@ module.exports = {
     donar: {
         uso: '!donate',
         descripcion: 'Shows options to support the bot development with donations.'
-    },
-    setlang: {
-        uso: '!setlang <es|en>',
-        descripcion: 'Sets the bot language in this server (Spanish or English).'
     }
 };

@@ -4,9 +4,6 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const createCommands = require('./commands');
 const Calificacion = require('./models/Calificacion');
 const connectDB = require('./db');
-const es = require('./languages/es_help_commands');
-const en = require('./languages/en_help_commands');
-const setLangHandler = require('./handlers/setlang');
 const quinielas = new Map();
 const apuestas = new Map();
 const resultados = new Map();
@@ -22,10 +19,7 @@ const client = new Client({
     ]
 });
 
-client.guildLanguages = new Map();
-
 const commands = createCommands(quinielas, apuestas, resultados);
-
 
 client.once('ready', () => {
     console.log(`✅ Bot conectado como ${client.user.tag}`);
@@ -33,26 +27,21 @@ client.once('ready', () => {
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
+
     if (!message.content.startsWith('!')) return;
 
-    const args = message.content.slice(1).split(/\s+/);
+    const args = message.content.slice(1).split(/ +/);
     const command = args.shift().toLowerCase();
 
-    if (command === 'setlang') return setLangHandler(message);
-
-    const guildID = message.guild.id;
-    const lang = client.guildLanguages.get(guildID) || 'es';
-    const langTexts = lang === 'es' ? es : en;
-
-    if (!langTexts[command]) {
-        return message.reply(langTexts['help'] ? langTexts['help'].comandoNoEncontrado || '❌ Comando no reconocido.' : '❌ Comando no reconocido.');
-    }
-
-    try {
-        await commands[command](message, langTexts);
-    } catch (err) {
-        console.error(err);
-        message.reply(langTexts.errorAlEjecutar || '❌ Error al ejecutar el comando.');
+    if (commands[command]) {
+        try {
+            await commands[command](message);
+        } catch (err) {
+            console.error(`❌ Error in command !${command}:`, err);
+            message.reply('❌ There was an error executing that command.');
+        }
+    } else {
+        message.reply(`❌ Command \`!${command}\` not recognized. Use \`!help\` to see the list of available commands.`);
     }
 });
 

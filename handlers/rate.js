@@ -2,10 +2,10 @@ const Calificacion = require('../models/Calificacion');
 
 module.exports = async (message) => {
     const pelea = message.content.slice('!calificar'.length).trim();
-    if (!pelea) return message.reply('❗ Usa: `!calificar <nombre de la pelea>`');
+    if (!pelea) return message.reply('❗ Use: `!rate <match name>`');
 
     try {
-        const msg = await message.channel.send(`⭐ Califica esta pelea:\n**${pelea}**`);
+        const msg = await message.channel.send(`⭐ Rate this match:\n**${pelea}**`);
 
         const estrellas = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
         for (const emoji of estrellas) {
@@ -21,7 +21,7 @@ module.exports = async (message) => {
         await calificacion.save();
 
     } catch (err) {
-        console.error('❌ Error al crear la calificación:', err);
-        message.reply('Hubo un error al crear la calificación.');
+        console.error('❌ Error creating the rating:', err);
+        message.reply('There was an error creating the rating.');
     }
 };

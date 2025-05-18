@@ -1,29 +1,37 @@
 const Punto = require('../models/Punto');
+
 module.exports = async (message, quinielas, apuestas, resultados) => {
     const partes = message.content.split(' ');
     const nombre = partes[1];
-    if (!nombre) return message.reply('❗ Usa: `!finalizar <nombre_quiniela>`');
+    if (!nombre) return message.reply('❗ Use: `!finish <pool_name>`');
+
     const key = `${message.guild.id}:${nombre}`;
     const combates = quinielas.get(key);
     if (!combates || combates.length === 0) {
-        return message.reply('⚠️ Esa quiniela no existe o no tiene combates.');
+        return message.reply('⚠️ That betting pool does not exist or has no matches.');
     }
+
     const resumen = [];
     const puntajeEvento = new Map();
     let combatesEvaluados = 0;
+
     for (const combate of combates) {
         const mensajeID = combate.mensajeID;
         const emojiGanador = resultados.get(mensajeID);
         const votos = apuestas.get(mensajeID);
+
         if (!emojiGanador) {
-            resumen.push(`❓ Combate ${mensajeID} sin resultado. Usa \`!resultado ${mensajeID} <emoji>\``);
+            resumen.push(`❓ Match ${mensajeID} has no result. Use \`!result ${mensajeID} <emoji>\``);
             continue;
         }
+
         if (!votos) {
-            resumen.push(`🕳️ Combate ${mensajeID} sin apuestas registradas.`);
+            resumen.push(`🕳️ Match ${mensajeID} has no bets registered.`);
             continue;
         }
+
         let ganadores = [];
+
         for (const [userID, emoji] of votos.entries()) {
             if (emoji === emojiGanador) {
                 let punto = await Punto.findOne({ guildID: message.guild.id, userID });
@@ -33,29 +41,39 @@ module.exports = async (message, quinielas, apuestas, resultados) => {
                     punto.score += 1;
                 }
                 await punto.save();
+
                 const prev = puntajeEvento.get(userID) || 0;
                 puntajeEvento.set(userID, prev + 1);
+
                 ganadores.push(`<@${userID}> (+1 pt)`);
             }
         }
+
         apuestas.delete(mensajeID);
         combatesEvaluados++;
-        resumen.push(ganadores.length === 0
-            ? `🔚 Combate ${mensajeID}: nadie acertó`
-            : `🏆 Combate ${mensajeID} - Ganadores: ${ganadores.join(', ')}`);
+
+        resumen.push(
+            ganadores.length === 0
+                ? `🔚 Match ${mensajeID}: no one guessed correctly`
+                : `🏆 Match ${mensajeID} - Winners: ${ganadores.join(', ')}`
+        );
     }
+
     quinielas.delete(key);
+
     const rankingEvento = [...puntajeEvento.entries()]
         .sort((a, b) => b[1] - a[1])
         .map(([userID, pts], i) => `#${i + 1} <@${userID}> — ${pts} pt${pts > 1 ? 's' : ''}`);
+
     const resumenFinal = [
-        `🎯 Quiniela **${nombre}** finalizada`,
-        `📊 Combates evaluados: ${combatesEvaluados}/${combates.length}`,
+        `🎯 Betting pool **${nombre}** finished`,
+        `📊 Matches evaluated: ${combatesEvaluados}/${combates.length}`,
         '',
         ...resumen,
         '',
-        '🏅 **Ranking del Evento:**',
-        rankingEvento.length > 0 ? rankingEvento.join('\n') : 'Sin aciertos en esta quiniela.'
+        '🏅 **Event Ranking:**',
+        rankingEvento.length > 0 ? rankingEvento.join('\n') : 'No correct guesses in this betting pool.'
     ];
+
     message.channel.send(resumenFinal.join('\n'));
 };

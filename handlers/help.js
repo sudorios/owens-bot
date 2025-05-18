@@ -1,17 +1,17 @@
 const { EmbedBuilder } = require('discord.js');
-const comandos = require('../languages/es_help_commands');
+const comandos = require('../languages/en_help_commands');
 
 module.exports = async (message) => {
     const embed = new EmbedBuilder()
         .setColor(0x00AEFF)
-        .setTitle('📘 Comandos disponibles')
-        .setDescription('Aquí tienes todos los comandos actualizados del bot:')
+        .setTitle('📘 Available Commands')
+        .setDescription('Here is the updated list of commands for the bot:')
 
     Object.keys(comandos).forEach(cmd => {
         embed.addFields({ name: `\`${comandos[cmd].uso}\``, value: comandos[cmd].descripcion });
     });
 
-    embed.setFooter({ text: 'Bot Owens | Sistema de Quinielas ⚔️', iconURL: message.client.user.displayAvatarURL() });
+    embed.setFooter({ text: 'Owens Bot | Betting Pool System ⚔️', iconURL: message.client.user.displayAvatarURL() });
 
     message.channel.send({ embeds: [embed] });
 };

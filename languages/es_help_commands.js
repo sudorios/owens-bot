@@ -1,9 +1,7 @@
 module.exports = {
     crearquiniela: {
         uso: '!crearquiniela <nombre>',
-        descripcion: 'Crea una nueva quiniela para este servidor.',
-        yaExiste: '⚠️ Ya existe una quiniela con ese nombre.',
-        mensajeCreada: '🗂️ Quiniela **{nombre}** creada. Ahora agrega combates con `!combate {nombre} <pelea>`'
+        descripcion: 'Crea una nueva quiniela para este servidor.'
     },
     combate: {
         uso: '!combate <quiniela> <pelea>',
