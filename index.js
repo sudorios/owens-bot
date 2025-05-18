@@ -4,12 +4,12 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const createCommands = require('./commands');
 const Calificacion = require('./models/Calificacion');
 const connectDB = require('./db');
-
+const es = require('./languages/es_help_commands');
+const en = require('./languages/en_help_commands');
+const setLangHandler = require('./handlers/setlang');
 const quinielas = new Map();
 const apuestas = new Map();
 const resultados = new Map();
-
-const commands = createCommands(quinielas, apuestas, resultados);
 
 connectDB();
 
@@ -22,27 +22,37 @@ const client = new Client({
     ]
 });
 
+client.guildLanguages = new Map();
+
+const commands = createCommands(quinielas, apuestas, resultados);
+
+
 client.once('ready', () => {
     console.log(`✅ Bot conectado como ${client.user.tag}`);
 });
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
-
     if (!message.content.startsWith('!')) return;
 
-    const args = message.content.slice(1).split(/ +/);
+    const args = message.content.slice(1).split(/\s+/);
     const command = args.shift().toLowerCase();
 
-    if (commands[command]) {
-        try {
-            await commands[command](message);
-        } catch (err) {
-            console.error(`❌ Error en comando !${command}:`, err);
-            message.reply('❌ Hubo un error al ejecutar ese comando.');
-        }
-    } else {
-        message.reply(`❌ Comando \`!${command}\` no reconocido. Usa \`!help\` para ver la lista de comandos disponibles.`);
+    if (command === 'setlang') return setLangHandler(message);
+
+    const guildID = message.guild.id;
+    const lang = client.guildLanguages.get(guildID) || 'es';
+    const langTexts = lang === 'es' ? es : en;
+
+    if (!langTexts[command]) {
+        return message.reply(langTexts['help'] ? langTexts['help'].comandoNoEncontrado || '❌ Comando no reconocido.' : '❌ Comando no reconocido.');
+    }
+
+    try {
+        await commands[command](message, langTexts);
+    } catch (err) {
+        console.error(err);
+        message.reply(langTexts.errorAlEjecutar || '❌ Error al ejecutar el comando.');
     }
 });
 
@@ -77,6 +87,12 @@ client.on('messageReactionAdd', async (reaction, user) => {
             const validEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
             if (!validEmojis.includes(reaction.emoji.name)) return;
 
+            for (const r of message.reactions.cache.values()) {
+                if (r.emoji.name !== reaction.emoji.name && r.users.cache.has(user.id)) {
+                    await r.users.remove(user.id);
+                }
+            }
+
             const valor = validEmojis.indexOf(reaction.emoji.name) + 1;
 
             const votoExistenteIndex = calificacion.votos.findIndex(v => v.userID === user.id);
@@ -92,4 +108,5 @@ client.on('messageReactionAdd', async (reaction, user) => {
         console.error('❌ Error en reacción:', err);
     }
 });
+
 client.login(process.env.DISCORD_TOKEN);

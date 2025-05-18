@@ -1,10 +1,18 @@
-module.exports = (message, quinielas) => {
+module.exports = (message, quinielas, lang) => {
     const nombre = message.content.split(' ')[1];
-    if (!nombre) return message.reply('❗ Usa: `!crearquiniela <nombre>`');
-    const key = `${message.guild.id}:${nombre}`;
-    if (quinielas.has(key)) {
-        return message.reply('⚠️ Ya existe una quiniela con ese nombre en este servidor.');
+
+    if (!nombre) {
+        return message.reply(lang.crearquiniela?.uso || '❗ Usa: `!crearquiniela <nombre>`');
     }
-    quinielas.set(key, []);
-    return message.reply(`🗂️ Quiniela **${nombre}** creada. Ahora agrega combates con \`!combate ${nombre} <pelea>\``);
+
+    if (quinielas.has(nombre)) {
+        return message.reply(lang.crearquiniela?.yaExiste || '⚠️ Ya existe una quiniela con ese nombre.');
+    }
+
+    quinielas.set(nombre, []);
+
+    const mensajeCreada = (lang.crearquiniela?.mensajeCreada || `🗂️ Quiniela **${nombre}** creada.`)
+        .replace('{nombre}', nombre);
+
+    return message.reply(mensajeCreada);
 };
