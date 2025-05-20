@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageButton } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const Calificacion = require('../models/Calificacion');
 
 module.exports = async (message) => {
@@ -29,16 +29,16 @@ module.exports = async (message) => {
     };
 
     const crearBotones = () => {
-        return new MessageActionRow().addComponents(
-            new MessageButton()
+        return new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
                 .setCustomId('anterior')
                 .setLabel('⬅️ Anterior')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setDisabled(paginaActual === 0),
-            new MessageButton()
+            new ButtonBuilder()
                 .setCustomId('siguiente')
                 .setLabel('Siguiente ➡️')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setDisabled(paginaActual === totalPaginas - 1),
         );
     };
