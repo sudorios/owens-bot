@@ -1,7 +1,7 @@
 const Calificacion = require('../models/Calificacion');
 
 module.exports = async (message) => {
-    const pelea = message.content.slice('!calificar'.length).trim();
+    const pelea = message.content.slice('!rate'.length).trim();
     if (!pelea) return message.reply('❗ Use: `!rate <match name>`');
 
     try {
@@ -19,6 +19,12 @@ module.exports = async (message) => {
             votos: []
         });
         await calificacion.save();
+
+        setTimeout(() => {
+            message.delete().catch(err => {
+                console.error('No se pudo eliminar el mensaje:', err);
+            });
+        }, 3000);
 
     } catch (err) {
         console.error('❌ Error creating the rating:', err);
