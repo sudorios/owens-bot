@@ -2,76 +2,77 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const Calificacion = require('../models/Calificacion');
 
 module.exports = async (message) => {
-    const calificaciones = await Calificacion.find({ guildID: message.guild.id });
+    const ratings = await Calificacion.find({ guildID: message.guild.id });
 
-    if (calificaciones.length === 0) {
+    if (ratings.length === 0) {
         return message.reply('❗ There are no ratings recorded in this server.');
     }
 
-    const resumen = calificaciones.map(c => {
-        const votos = c.votos;
-        if (votos.length === 0) return `${c.pelea}: No votes yet`;
+    const summary = ratings.map(r => {
+        const votes = r.votos;
+        if (votes.length === 0) return `${r.pelea}: No votes yet`;
 
-        const suma = votos.reduce((acc, v) => acc + v.calificacion, 0);
-        const promedio = (suma / votos.length).toFixed(2);
+        const sum = votes.reduce((acc, v) => acc + v.calificacion, 0);
+        const average = (sum / votes.length).toFixed(2);
 
-        return `${c.pelea}: ${promedio} ⭐ (${votos.length} votes)`;
+        return `${r.pelea}: ${average} ⭐ (${votes.length} votes)`;
     });
 
-    const ITEMS_POR_PAGINA = 5;
-    const totalPaginas = Math.ceil(resumen.length / ITEMS_POR_PAGINA);
-    let paginaActual = 0;
+    const ITEMS_PER_PAGE = 5;
+    const totalPages = Math.ceil(summary.length / ITEMS_PER_PAGE);
+    let currentPage = 0;
 
-    const generarContenido = (pagina) => {
-        const inicio = pagina * ITEMS_POR_PAGINA;
-        const fin = inicio + ITEMS_POR_PAGINA;
-        return resumen.slice(inicio, fin).join('\n');
+    const generateContent = (page) => {
+        const start = page * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        return summary.slice(start, end).join('\n');
     };
 
-    const crearBotones = () => {
+    const createButtons = () => {
+        if (totalPages <= 1) return [];
         return new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setCustomId('anterior')
-                .setLabel('⬅️ Anterior')
+                .setCustomId('previous')
+                .setLabel('⬅️ Previous')
                 .setStyle(ButtonStyle.Primary)
-                .setDisabled(paginaActual === 0),
+                .setDisabled(currentPage === 0),
             new ButtonBuilder()
-                .setCustomId('siguiente')
-                .setLabel('Siguiente ➡️')
+                .setCustomId('next')
+                .setLabel('Next ➡️')
                 .setStyle(ButtonStyle.Primary)
-                .setDisabled(paginaActual === totalPaginas - 1),
+                .setDisabled(currentPage === totalPages - 1),
         );
     };
 
-    const mensaje = await message.channel.send({
-        content: `📊 **Ratings Page ${paginaActual + 1}/${totalPaginas}:**\n${generarContenido(paginaActual)}`,
-        components: [crearBotones()]
+    const sentMessage = await message.channel.send({
+        content: `📊 **Ratings Page ${currentPage + 1}/${totalPages}:**\n${generateContent(currentPage)}`,
+        components: createButtons()
     });
 
     const filter = (interaction) => {
-        return ['anterior', 'siguiente'].includes(interaction.customId) && interaction.user.id === message.author.id;
+        return ['previous', 'next'].includes(interaction.customId) && interaction.user.id === message.author.id;
     };
 
-    const collector = mensaje.createMessageComponentCollector({ filter, time: 60000 });
+    const collector = sentMessage.createMessageComponentCollector({ filter, time: 60000 });
 
     collector.on('collect', async (interaction) => {
-        if (interaction.customId === 'anterior' && paginaActual > 0) {
-            paginaActual--;
-        } else if (interaction.customId === 'siguiente' && paginaActual < totalPaginas - 1) {
-            paginaActual++;
+        if (interaction.customId === 'previous' && currentPage > 0) {
+            currentPage--;
+        } else if (interaction.customId === 'next' && currentPage < totalPages - 1) {
+            currentPage++;
         }
 
         await interaction.update({
-            content: `📊 **Ratings Page ${paginaActual + 1}/${totalPaginas}:**\n${generarContenido(paginaActual)}`,
-            components: [crearBotones()]
+            content: `📊 **Ratings Page ${currentPage + 1}/${totalPages}:**\n${generateContent(currentPage)}`,
+            components: createButtons()
         });
     });
 
     collector.on('end', async () => {
-        if (!mensaje.deleted) {
-            await mensaje.edit({
+        if (!sentMessage.deleted) {
+            await sentMessage.edit({
                 components: [],
-                content: mensaje.content + '\n\n⏰ Paginación finalizada.'
+                content: sentMessage.content + '\n\n⏰ Pagination ended.'
             }).catch(() => { });
         }
     });
