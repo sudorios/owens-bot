@@ -7,6 +7,6 @@ const PuntoSchema = new Schema({
     score: { type: Number, default: 0 }
 });
 
-PuntoSchema.index({ guildID: 1, userID: 1 }, { unique: true });
+PuntoSchema.index({ guildID: 1 }, { unique: true });
 
 module.exports = model('Punto', PuntoSchema);

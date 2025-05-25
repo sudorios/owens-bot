@@ -6,8 +6,11 @@ module.exports = async (message, quinielas, apuestas) => {
     const contenido = partes.slice(2).join(' ');
     const key = `${message.guild.id}:${nombre}`;
 
+    message.delete().catch(() => { });
+
     if (!quinielas.has(key)) {
-        return message.reply('❗ That betting pool does not exist on this server. Use `!createpool` first.');
+        return message.channel.send('❗ That betting pool does not exist on this server. Use `!createpool` first.')
+            .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     }
 
     const regex = emojiRegex();
@@ -28,9 +31,11 @@ module.exports = async (message, quinielas, apuestas) => {
         quinielas.get(key).push(combate);
         apuestas.set(msg.id, new Map());
 
-        message.reply(`✅ Match added to the betting pool **${nombre}**`); //ojo aca - crea mucho spam
+        message.channel.send(`✅ Match added to the betting pool **${nombre}**`)
+            .then(replyMsg => setTimeout(() => replyMsg.delete().catch(() => { }), 5000));
     } catch (err) {
         console.error('❌ Error publishing the match:', err);
-        message.reply('There was an error adding the match.');
+        message.channel.send('There was an error adding the match.')
+            .then(errMsg => setTimeout(() => errMsg.delete().catch(() => { }), 5000));
     }
 };
