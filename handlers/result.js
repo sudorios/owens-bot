@@ -10,6 +10,11 @@ module.exports = async (message, quinielas, resultados) => {
             .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     }
 
+    if (resultados.has(mensajeID)) {
+        return message.channel.send('⚠️ This match already has a recorded result. You can only run `!result` once per match.')
+            .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
+    }
+
     const combates = [...quinielas.values()].flat();
     const existe = combates.find(c => c.mensajeID === mensajeID);
 
