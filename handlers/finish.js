@@ -34,13 +34,14 @@ module.exports = async (message, quinielas, apuestas, resultados) => {
 
         for (const [userID, emoji] of votos.entries()) {
             if (emoji === emojiGanador) {
-                let punto = await Punto.findOne({ guildID: message.guild.id, userID });
-                if (!punto) {
-                    punto = new Punto({ guildID: message.guild.id, userID, username: `<@${userID}>`, score: 1 });
-                } else {
-                    punto.score += 1;
-                }
-                await punto.save();
+                await Punto.updateOne(
+                    { guildID: message.guild.id, userID },
+                    {
+                        $set: { username: `<@${userID}>` },
+                        $inc: { score: 1 }
+                    },
+                    { upsert: true }
+                );
 
                 const prev = puntajeEvento.get(userID) || 0;
                 puntajeEvento.set(userID, prev + 1);

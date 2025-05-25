@@ -28,7 +28,7 @@ module.exports = async (message, quinielas, apuestas) => {
         quinielas.get(key).push(combate);
         apuestas.set(msg.id, new Map());
 
-        message.reply(`✅ Match added to the betting pool **${nombre}**`);
+        message.reply(`✅ Match added to the betting pool **${nombre}**`); //ojo aca - crea mucho spam
     } catch (err) {
         console.error('❌ Error publishing the match:', err);
         message.reply('There was an error adding the match.');
