@@ -34,5 +34,9 @@ module.exports = {
     donar: {
         uso: '!donate',
         descripcion: 'Shows options to support the bot development with donations.'
+    },
+    poolstatus: {
+        uso: '!poolstatus',
+        descripcion: 'Shows the list of betting pools created in this server.'
     }
 };

@@ -65,8 +65,5 @@ module.exports = async (message, quinielas, apuestas, resultados) => {
         rankingEvento.length > 0 ? rankingEvento.join('\n') : 'No correct guesses in this betting pool.'
     ];
 
-    message.channel.send(resumenFinal.join('\n'))
-        .then(sentMessage => {
-            setTimeout(() => sentMessage.delete().catch(() => { }), 5000);
-        });
+    message.channel.send(resumenFinal.join('\n'));
 };

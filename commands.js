@@ -1,5 +1,6 @@
 // commands.js
 const handleCrearQuiniela = require('./handlers/createPool');
+const handlePoolStatus = require('./handlers/poolstatus');
 const handleAgregarCombate = require('./handlers/match');
 const handleGuardarResultado = require('./handlers/result');
 const handleFinalizarQuiniela = require('./handlers/finish');
@@ -19,4 +20,5 @@ module.exports = (quinielas, apuestas, resultados) => ({
     rate: (msg) => handleCalificar(msg),
     viewrating: (msg) => handleVerCalificacion(msg),
     donate: (msg) => handleDonar(msg),
+    poolstatus: (msg) => handlePoolStatus(msg, quinielas),
 });
