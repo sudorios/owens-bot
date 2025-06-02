@@ -20,6 +20,7 @@ const client = new Client({
 });
 
 const commands = createCommands(quinielas, apuestas, resultados);
+const prefix = process.env.PREFIX || '?';
 
 client.once('ready', () => {
     console.log(`✅ Bot conectado como ${client.user.tag}`);
