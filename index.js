@@ -28,20 +28,20 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
-    if (!message.content.startsWith('!')) return;
+    if (!message.content.startsWith(prefix)) return;
 
-    const args = message.content.slice(1).split(/ +/);
+    const args = message.content.slice(prefix.length).trim().split(/ +/);
     const command = args.shift().toLowerCase();
 
     if (commands[command]) {
         try {
             await commands[command](message);
         } catch (err) {
-            console.error(`❌ Error in command !${command}:`, err);
+            console.error(`❌ Error in command ?${command}:`, err);
             message.reply('❌ There was an error executing that command.');
         }
     } else {
-        message.reply(`❌ Command \`!${command}\` not recognized. Use \`!help\` to see the list of available commands.`);
+        message.reply(`❌ Command \`?${command}\` not recognized. Use \`!help\` to see the list of available commands.`);
     }
 });
 

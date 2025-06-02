@@ -1,4 +1,4 @@
-const Punto = require('../models/Punto');
+const Punto = require('../../models/Punto');
 
 module.exports = async (message) => {
     const rankingCompleto = await Punto.find({ guildID: message.guild.id }).sort({ score: -1 });

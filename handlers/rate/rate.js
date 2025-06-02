@@ -1,8 +1,8 @@
-const Calificacion = require('../models/Calificacion');
+const Calificacion = require('../../models/Calificacion');
 
 module.exports = async (message) => {
     const pelea = message.content.slice('!rate'.length).trim();
-    if (!pelea) return message.reply('❗ Use: `!rate <match name>`');
+    if (!pelea) return message.reply('❗ Use: `?rate <match name>`');
 
     try {
         const msg = await message.channel.send(`⭐ Rate this match:\n**${pelea}**`);

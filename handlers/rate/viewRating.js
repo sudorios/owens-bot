@@ -1,5 +1,5 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const Calificacion = require('../models/Calificacion');
+const Calificacion = require('../../models/Calificacion');
 
 module.exports = async (message) => {
     const ratings = await Calificacion.find({ guildID: message.guild.id });

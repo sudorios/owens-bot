@@ -9,7 +9,7 @@ module.exports = async (message, quinielas, apuestas) => {
     message.delete().catch(() => { });
 
     if (!quinielas.has(key)) {
-        return message.channel.send('❗ That betting pool does not exist on this server. Use `!createpool` first.')
+        return message.channel.send('❗ That betting pool does not exist on this server. Use `?createpool` first.')
             .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     }
 

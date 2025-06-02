@@ -4,7 +4,7 @@ module.exports = (message, quinielas) => {
     const nombre = message.content.split(' ')[1];
 
     if (!nombre) {
-        return message.channel.send('❗ Use: `!createpool <name>`')
+        return message.channel.send('❗ Use: `?createpool <name>`')
             .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     }
 
