@@ -1,4 +1,4 @@
-const Punto = require('../models/Punto');
+const Punto = require('../../models/Punto');
 
 module.exports = async (message, quinielas, resultados) => {
     const [_, mensajeID, emojiGanador] = message.content.split(' ');
