@@ -1,4 +1,4 @@
-const ActiveSeason = require('../../models/ActiveSeason');
+const ActiveSeason = require('../models/ActiveSeason');
 
 const CHUNKSIZE = 15;
 
