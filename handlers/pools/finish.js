@@ -1,7 +1,7 @@
 module.exports = async (message, quinielas, apuestas, resultados) => {
     const partes = message.content.split(' ');
     const nombre = partes[1];
-    if (!nombre) return message.reply('❗ Use: `?finish <pool_name>`');
+    if (!nombre) return message.reply('❗ Use: `!finish <pool_name>`');
 
     const key = `${message.guild.id}:${nombre}`;
     const combates = quinielas.get(key);
@@ -19,7 +19,7 @@ module.exports = async (message, quinielas, apuestas, resultados) => {
         const votos = apuestas.get(mensajeID);
 
         if (!emojiGanador) {
-            resumen.push(`❓ Match ${mensajeID} has no result. Use \`?result ${mensajeID} <emoji>\``);
+            resumen.push(`❓ Match ${mensajeID} has no result. Use \`!result ${mensajeID} <emoji>\``);
             continue;
         }
 

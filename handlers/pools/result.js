@@ -1,4 +1,5 @@
 const Punto = require('../../models/Punto');
+const { getOrCreateActiveSeason } = require('../utils/seasonUtils');
 
 module.exports = async (message, quinielas, resultados) => {
     const [_, mensajeID, emojiGanador] = message.content.split(' ');
@@ -6,7 +7,7 @@ module.exports = async (message, quinielas, resultados) => {
     message.delete().catch(() => { });
 
     if (!mensajeID || !emojiGanador) {
-        return message.channel.send('❗ Use: `!result <messageID> <emoji>`')
+        return message.channel.send('❗ Use: `?result <messageID> <emoji>`')
             .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     }
 
@@ -32,9 +33,11 @@ module.exports = async (message, quinielas, resultados) => {
         const users = await reaction.users.fetch();
         const jugadores = users.filter(u => !u.bot);
 
+        const seasonActual = await getOrCreateActiveSeason(message.guild.id);
+
         for (const [userID, user] of jugadores) {
             await Punto.updateOne(
-                { guildID: message.guild.id, userID },
+                { guildID: message.guild.id, userID, season: seasonActual },
                 {
                     $set: { username: `<@${userID}>` },
                     $inc: { score: 1 }
@@ -43,7 +46,7 @@ module.exports = async (message, quinielas, resultados) => {
             );
         }
 
-        message.channel.send(`✅ Result saved for match ${mensajeID}: winner ${emojiGanador}. Points awarded to ${jugadores.size} user(s).`)
+        message.channel.send(`✅ Result saved for match ${mensajeID}: winner ${emojiGanador}. Points awarded to ${jugadores.size} user(s) for season **${seasonActual}**.`)
             .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     } catch (error) {
         console.error('❌ Error assigning points:', error);
