@@ -23,6 +23,6 @@ module.exports = (quinielas, apuestas, resultados) => ({
     viewrating: (msg) => handleVerCalificacion(msg),
     donate: (msg) => handleDonar(msg),
     poolstatus: (msg) => handlePoolStatus(msg, quinielas),
-    finishSeason: (msg) => handleFinishSeason(msg),
+    finishseason: (msg) => handleFinishSeason(msg),
     seasons: (msg) => handleSeasons(msg)
 });
