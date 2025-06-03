@@ -11,7 +11,6 @@ const handleDonar = require('./handlers/donate');
 const handleRankingGlobal = require('./handlers/pools/global')
 const handleFinishSeason = require('./handlers/pools/finishSeason');
 const handleSeasons = require('./handlers/pools/seasons');
-const handleRankingGlobal = require('./handlers/pools/global');
 
 module.exports = (quinielas, apuestas, resultados) => ({
     createpool: (msg) => handleCrearQuiniela(msg, quinielas),
