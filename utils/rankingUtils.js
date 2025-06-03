@@ -1,3 +1,4 @@
+const Punto = require('../models/Punto');
 
 const CHUNKSIZE = 15;
 
@@ -16,8 +17,10 @@ async function sendRanking(message, ranking, title = 'Ranking', positionField = 
     });
 
     for (let i = 0; i < ranking.length; i++) {
-        ranking[i][positionField] = i + 1;
-        await ranking[i].save();
+        await Punto.updateOne(
+            { _id: ranking[i]._id },
+            { [positionField]: i + 1 }
+        );
     }
 
     for (let i = 0; i < rankingLines.length; i += CHUNKSIZE) {
@@ -25,7 +28,5 @@ async function sendRanking(message, ranking, title = 'Ranking', positionField = 
         await message.channel.send(`📊 **${title}**\n${chunk}`);
     }
 }
-
-
 
 module.exports = { sendRanking };
