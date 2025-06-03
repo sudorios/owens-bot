@@ -1,4 +1,3 @@
-const ActiveSeason = require('../models/ActiveSeason');
 
 const CHUNKSIZE = 15;
 
@@ -27,13 +26,6 @@ async function sendRanking(message, ranking, title = 'Ranking', positionField = 
     }
 }
 
-async function getOrCreateActiveSeason(guildID) {
-    let activeSeason = await ActiveSeason.findOne({ guildID });
-    if (!activeSeason) {
-        activeSeason = await ActiveSeason.create({ guildID, currentSeason: 'global' });
-    }
-    return activeSeason.currentSeason;
-}
 
 
-module.exports = { sendRanking, getOrCreateActiveSeason };
+module.exports = { sendRanking };

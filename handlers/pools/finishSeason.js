@@ -1,40 +1,53 @@
 const Punto = require('../../models/Punto');
 const SeasonWinner = require('../../models/seasonWinner');
 const ActiveSeason = require('../../models/ActiveSeason');
+const { getSeasonIndex, getSeasonNameByIndex } = require('../../utils/seasonUtils');
 
 module.exports = async (message) => {
-    const args = message.content.split(' ');
-    const seasonName = args[1];
+    const guildID = message.guild.id;
 
-    if (!seasonName) {
-        return message.reply('❗ Please use: `?finishSeason <seasonName>` (e.g., Season1)');
+    let activeSeasonDoc = await ActiveSeason.findOne({ guildID });
+    if (!activeSeasonDoc) {
+        activeSeasonDoc = await ActiveSeason.create({ guildID, currentSeason: 'global' });
     }
 
-    if (!seasonName || seasonName.toLowerCase() === 'global') {
-        return message.reply('❗ The season name "global" is reserved and cannot be used. Please choose another name.');
+    const seasonActual = activeSeasonDoc.currentSeason;
+    const seasonIndex = getSeasonIndex(seasonActual);
+
+    const usuarios = await Punto.find({ guildID });
+
+    const ranking = usuarios
+        .map(u => ({
+            username: u.username,
+            score: u.score[seasonIndex] || 0
+        }))
+        .sort((a, b) => b.score - a.score);
+
+    if (ranking.length === 0 || ranking.every(r => r.score === 0)) {
+        return message.reply(`📉 No scores found for season **${seasonActual}**.`);
     }
 
-    const fullRanking = await Punto.find({ guildID: message.guild.id, season: seasonName }).sort({ score: -1 });
-
-    if (fullRanking.length === 0) {
-        return message.reply(`📉 There are no recorded scores for season **${seasonName}** in this server yet.`);
-    }
-
-    const winner = fullRanking[0];
+    const winner = ranking[0];
 
     await SeasonWinner.create({
-        guildID: message.guild.id,
-        season: seasonName,
+        guildID,
+        season: seasonActual,
         winner: winner.username,
         score: winner.score
     });
 
+    const nuevaSeasonIndex = seasonIndex + 1;
+    const nuevaSeasonName = getSeasonNameByIndex(nuevaSeasonIndex);
+
     await ActiveSeason.findOneAndUpdate(
-        { guildID: message.guild.id },
-        { currentSeason: seasonName },
+        { guildID },
+        { currentSeason: nuevaSeasonName },
         { upsert: true }
     );
 
-    message.channel.send(`🏆 Season **${seasonName}** finished. Winner: **${winner.username}** with ${winner.score} points.\n` +
-        `📢 Ranking now based on season **${seasonName}**.`);
+    message.channel.send(
+        `🏁 Season **${seasonActual}** ended!\n` +
+        `🏆 Winner: **${winner.username}** with ${winner.score} pts.\n` +
+        `📢 New season **${nuevaSeasonName}** has started.`
+    );
 };
