@@ -1,5 +1,5 @@
 const Punto = require('../../models/Punto');
-const { getOrCreateActiveSeason } = require('../../utils/seasonUtils');
+const { getOrCreateActiveSeason, getSeasonIndex } = require('../../utils/seasonUtils');
 
 module.exports = async (message, quinielas, resultados) => {
     const [_, mensajeID, emojiGanador] = message.content.split(' ');
@@ -34,13 +34,18 @@ module.exports = async (message, quinielas, resultados) => {
         const jugadores = users.filter(u => !u.bot);
 
         const seasonActual = await getOrCreateActiveSeason(message.guild.id);
+        const seasonIndex = getSeasonIndex(seasonActual);
 
         for (const [userID, user] of jugadores) {
             await Punto.updateOne(
-                { guildID: message.guild.id, userID, season: seasonActual },
+                { guildID: message.guild.id, userID },
                 {
-                    $set: { username: `<@${userID}>` },
-                    $inc: { score: 1 }
+                    $set: {
+                        username: `<@${userID}>`
+                    },
+                    $inc: {
+                        [`score.${seasonIndex}`]: 1
+                    }
                 },
                 { upsert: true }
             );
