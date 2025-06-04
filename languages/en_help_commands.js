@@ -40,8 +40,8 @@ module.exports = {
         descripcion: 'Shows the list of betting pools created in this server.'
     },
     finishseason: {
-        uso: '?finishseason <seasonName>',
-        descripcion: 'Ends the current season, saves the winner and the season name.'
+        uso: '?finishseason',
+        descripcion: 'Ends the current season'
     },
     seasons: {
         uso: '?seasons',
