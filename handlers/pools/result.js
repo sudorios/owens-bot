@@ -7,7 +7,7 @@ module.exports = async (message, quinielas, resultados) => {
     message.delete().catch(() => { });
 
     if (!mensajeID || !emojiGanador) {
-        return message.channel.send('❗ Use: `?result <messageID> <emoji>`')
+        return message.channel.send('Use: `?result <messageID> <emoji>`')
             .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     }
 
@@ -15,7 +15,7 @@ module.exports = async (message, quinielas, resultados) => {
     const existe = combates.find(c => c.mensajeID === mensajeID);
 
     if (!existe) {
-        return message.channel.send('❌ That message does not belong to any registered match.')
+        return message.channel.send('That message does not belong to any registered match.')
             .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
     }
 
@@ -26,7 +26,7 @@ module.exports = async (message, quinielas, resultados) => {
 
         const reaction = msg.reactions.cache.get(emojiGanador);
         if (!reaction) {
-            return message.channel.send(`⚠️ No one reacted with ${emojiGanador}.`)
+            return message.channel.send(`No one reacted with ${emojiGanador}.`)
                 .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
         }
 
@@ -51,8 +51,8 @@ module.exports = async (message, quinielas, resultados) => {
             );
         }
 
-        message.channel.send(`✅ Result saved for match ${mensajeID}: winner ${emojiGanador}. Points awarded to ${jugadores.size} user(s) for season **${seasonActual}**.`)
-            .then(msg => setTimeout(() => msg.delete().catch(() => { }), 5000));
+        message.channel.send(`✅ ${emojiGanador} — ${jugadores.size} scored`);
+
     } catch (error) {
         console.error('❌ Error assigning points:', error);
         message.channel.send('❌ Error fetching reactions or updating points.')
