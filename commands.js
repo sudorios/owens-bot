@@ -11,6 +11,7 @@ const handleDonar = require('./handlers/donate');
 const handleRankingGlobal = require('./handlers/pools/global')
 const handleFinishSeason = require('./handlers/pools/finishSeason');
 const handleSeasons = require('./handlers/pools/seasons');
+const handleGetMemberIDs = require('./handlers/getMemberIDs');
 
 module.exports = (quinielas, apuestas, resultados) => ({
     createpool: (msg) => handleCrearQuiniela(msg, quinielas),
@@ -26,4 +27,5 @@ module.exports = (quinielas, apuestas, resultados) => ({
     finishseason: (msg) => handleFinishSeason(msg),
     seasons: (msg) => handleSeasons(msg),
     global: (msg) => handleRankingGlobal(msg),
+    getid: (msg) => handleGetMemberIDs(msg),
 });

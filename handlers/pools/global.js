@@ -22,8 +22,8 @@ module.exports = async (message) => {
         .sort((a, b) => b.score - a.score);
 
     if (ranking.every(r => r.score === 0)) {
-        return message.reply('📉 No global points yet.');
+        return message.reply('No global points yet.');
     }
 
-    await sendRanking(message, ranking, '📊 Global Ranking', 'lastPositionGlobal');
+    await sendRanking(message, ranking, 'Global Ranking', 'lastPositionGlobal');
 };

@@ -13,7 +13,7 @@ async function sendRanking(message, ranking, title = 'Ranking', positionField = 
             else if (currentPos > lastPos) trendEmoji = '⬇️';
         }
 
-        return `${p.username} ${p.score} pt${p.score !== 1 ? 's' : ''} ${trendEmoji}`;
+        return `${currentPos}. ${p.username} ${p.score} pt${p.score !== 1 ? 's' : ''} ${trendEmoji}`;
     });
 
     for (let i = 0; i < ranking.length; i++) {
@@ -25,7 +25,11 @@ async function sendRanking(message, ranking, title = 'Ranking', positionField = 
 
     for (let i = 0; i < rankingLines.length; i += CHUNKSIZE) {
         const chunk = rankingLines.slice(i, i + CHUNKSIZE).join('\n');
-        await message.channel.send(`📊 **${title}**\n${chunk}`);
+        if (i === 0) {
+            await message.channel.send(` **${title}**\n${chunk}`);
+        } else {
+            await message.channel.send(chunk);
+        }
     }
 }
 
