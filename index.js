@@ -16,7 +16,8 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.GuildMembers 
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessagePolls
     ]
 });
 
@@ -46,6 +47,31 @@ client.on('messageCreate', async (message) => {
         message.reply(`❌ Command \`?${command}\` not recognized. Use \`!help\` to see the list of available commands.`);
     }
 });
+
+client.on('messagePollVoteAdd', async (answer, userId) => {
+    try {
+      const quinielaData = [...quinielas.values()].find(([q]) =>
+        q.opciones.some((o) => o.text === answer.text)
+      );
+  
+      if (!quinielaData) {
+        console.warn(`⚠️ No se encontró la quiniela para el voto por "${answer.text}"`);
+        return;
+      }
+  
+      const quiniela = quinielaData[0];
+      const mensajeID = quiniela.mensajeID;
+  
+      if (!apuestas.has(mensajeID)) apuestas.set(mensajeID, new Map());
+      apuestas.get(mensajeID).set(userId, answer.text);
+  
+      console.log(`🗳️ ${userId} votó por "${answer.text}" en ${mensajeID}`);
+    } catch (err) {
+      console.error('❌ Error al procesar voto:', err);
+    }
+  });
+  
+
 
 client.on('messageReactionAdd', async (reaction, user) => {
     if (user.bot) return;

@@ -5,7 +5,7 @@ module.exports = async (message) => {
     const documentos = await Punto.find({ guildID: message.guild.id });
 
     if (documentos.length === 0) {
-        return message.reply('📉 No global scores recorded yet.');
+        return message.reply('No global scores recorded yet.');
     }
 
     const ranking = documentos
@@ -16,14 +16,28 @@ module.exports = async (message) => {
                 userID: p.userID,
                 username: p.username,
                 score: total,
-                lastPositionGlobal: p.lastPositionGlobal || null
+                lastPosition: p.lastPosition || null,  
+                position: p.position || null  
             };
         })
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => b.score - a.score); 
+
+    for (let i = 0; i < ranking.length; i++) {
+        ranking[i].position = i + 1;  
+    }
 
     if (ranking.every(r => r.score === 0)) {
         return message.reply('No global points yet.');
     }
 
-    await sendRanking(message, ranking, 'Global Ranking', 'lastPositionGlobal');
+    for (let i = 0; i < ranking.length; i++) {
+        await Punto.updateOne(
+            { _id: ranking[i]._id },
+            { 
+                position: ranking[i].position  
+            }
+        );
+    }
+
+    await sendRanking(message, ranking, 'Global Ranking', 'lastPosition');
 };

@@ -1,31 +1,55 @@
-const handleCrearQuiniela = require('./handlers/pools/createPool');
-const handlePoolStatus = require('./handlers/pools/poolstatus');
-const handleAgregarCombate = require('./handlers/pools/match');
-const handleGuardarResultado = require('./handlers/pools/result');
-const handleFinalizarQuiniela = require('./handlers/pools/finish');
-const handleRanking = require('./handlers/pools/ranking');
-const handleHelp = require('./handlers/help');
-const handleCalificar = require('./handlers/rate/rate');
-const handleVerCalificacion = require('./handlers/rate/viewRating');
-const handleDonar = require('./handlers/donate');
-const handleRankingGlobal = require('./handlers/pools/global')
-const handleFinishSeason = require('./handlers/pools/finishSeason');
-const handleSeasons = require('./handlers/pools/seasons');
-const handleGetMemberIDs = require('./handlers/getMemberIDs');
+const allpool = require('./handlers/pools/allpool');
 
-module.exports = (quinielas, apuestas, resultados) => ({
-    createpool: (msg) => handleCrearQuiniela(msg, quinielas),
-    match: (msg) => handleAgregarCombate(msg, quinielas, apuestas),
-    result: (msg) => handleGuardarResultado(msg, quinielas, resultados),
-    finish: (msg) => handleFinalizarQuiniela(msg, quinielas, apuestas, resultados),
-    ranking: (msg) => handleRanking(msg),
-    help: (msg) => handleHelp(msg),
-    rate: (msg) => handleCalificar(msg),
-    viewrating: (msg) => handleVerCalificacion(msg),
-    donate: (msg) => handleDonar(msg),
-    poolstatus: (msg) => handlePoolStatus(msg, quinielas),
-    finishseason: (msg) => handleFinishSeason(msg),
-    seasons: (msg) => handleSeasons(msg),
-    global: (msg) => handleRankingGlobal(msg),
-    getid: (msg) => handleGetMemberIDs(msg),
-});
+const poolHandlers = {
+    createPool: require('./handlers/pools/createPool'),
+    createPool2: require('./handlers/pools/createpool2'),
+    cerrarPool: require('./handlers/pools/cerrarPool'),
+    allpool: require('./handlers/pools/allpool'),
+    match: require('./handlers/pools/match'),
+    result: require('./handlers/pools/result'),
+    finish: require('./handlers/pools/finish'),
+    poolStatus: require('./handlers/pools/poolstatus'),
+    finishSeason: require('./handlers/pools/finishSeason'),
+    seasons: require('./handlers/pools/seasons')
+};
+
+const rankingHandlers = {
+    ranking: require('./handlers/pools/ranking'),
+    global: require('./handlers/pools/global')
+};
+
+const rateHandlers = {
+    rate: require('./handlers/rate/rate'),
+    viewRating: require('./handlers/rate/viewRating')
+};
+
+const utilityHandlers = {
+    help: require('./handlers/help'),
+    donate: require('./handlers/donate')
+};
+
+module.exports = (quinielas, apuestas, resultados) => {
+    const commands = {
+        createpool: (msg) => poolHandlers.createPool(msg, quinielas),
+        createpool2: (msg) => poolHandlers.createPool2(msg, quinielas),
+        cerrarpool: (msg) => poolHandlers.cerrarPool(msg, quinielas, apuestas),
+        allpool: (msg) => poolHandlers.allpool(msg),
+        match: (msg) => poolHandlers.match(msg, quinielas, apuestas),
+        result: (msg) => poolHandlers.result(msg, quinielas, resultados),
+        finish: (msg) => poolHandlers.finish(msg, quinielas, apuestas, resultados),
+        poolstatus: (msg) => poolHandlers.poolStatus(msg, quinielas),
+        finishseason: (msg) => poolHandlers.finishSeason(msg),
+        seasons: (msg) => poolHandlers.seasons(msg),
+        
+        ranking: (msg) => rankingHandlers.ranking(msg),
+        global: (msg) => rankingHandlers.global(msg),
+        
+        rate: (msg) => rateHandlers.rate(msg),
+        viewrating: (msg) => rateHandlers.viewRating(msg),
+        
+        help: (msg) => utilityHandlers.help(msg),
+        donate: (msg) => utilityHandlers.donate(msg)
+    };
+
+    return commands;
+};

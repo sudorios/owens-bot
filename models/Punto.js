@@ -6,8 +6,10 @@ const PuntoSchema = new Schema({
     username: String,
     score: { type: [Number], default: [0] },
     lastPosition: { type: Number, default: null },
+    position: { type: Number, default: null },  
     season: { type: String, required: true }
 });
+
 
 PuntoSchema.index({ guildID: 1 }, { unique: true });
 
