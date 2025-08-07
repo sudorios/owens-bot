@@ -15,41 +15,48 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement()) 
-  userId   BigInt  @unique                     
+  id       Int    @id @default(autoincrement())
+  userId   BigInt @unique
   username String
 
-  events Event[]
-  guildUsers GuildUser[]
-  userScores EventScore[]
-  predictions Predictions[]
+  events        Event[]
+  guildUsers    GuildUser[]
+  userScores    EventScore[]
+  predictions   Prediction[]
+  seasonsScores SeasonScore[]
+  eventRatings EventRating[]
+  matchRatings MatchRating[]
 }
 
 model Guild {
-  id      Int    @id @default(autoincrement()) 
-  guildId BigInt @unique                      
-  name String
+  id       Int      @id @default(autoincrement())
+  guildId  BigInt   @unique
+  name     String
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  events    Event[]     
-  guildUsers GuildUser[]
-  eventScores EventScore[]
-  predictions Predictions[]
+  events        Event[]
+  guildUsers    GuildUser[]
+  eventScores   EventScore[]
+  predictions   Prediction[]
+  seasons       Season[]
+  seasonsScores SeasonScore[]
+  eventRatings EventRating[]
+  matchRatings MatchRating[]
 }
 
 model GuildUser {
-  id            Int      @id @default(autoincrement()) 
-  guild         Guild    @relation(fields: [guildId], references: [id])
-  guildId       Int
-  user          User     @relation(fields: [userId], references: [id])
-  userId        Int
-  role          String
-  points        Int      @default(0)
-  lastPosition  Int      @default(0)
-  position      Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  guild        Guild    @relation(fields: [guildId], references: [id])
+  guildId      Int
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+  role         String
+  points       Int      @default(0)
+  lastPosition Int      @default(0)
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([guildId, userId])
   @@index([guildId])
@@ -57,29 +64,29 @@ model GuildUser {
 }
 
 model Event {
-  id         Int      @id @default(autoincrement()) 
-  guild      Guild    @relation(fields: [guildId], references: [id])
-  guildId    Int
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int
-  name       String
-  state      String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  guild     Guild    @relation(fields: [guildId], references: [id])
+  guildId   Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  name      String
+  state     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventsScores EventScore[]
+  questions    Question[]
+  predictions  Prediction[]
+  eventRatings EventRating[]
 
   @@index([guildId])
   @@index([userId])
-
-  eventsScores EventScore[]
-  questions    Questions[]
-  predictions  Predictions[]
 }
 
-
 model EventScore {
-  id         Int      @id @default(autoincrement()) 
+  id        Int      @id @default(autoincrement())
   userId    Int
-  user       User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   guildId   Int
   guild     Guild    @relation(fields: [guildId], references: [id])
   eventId   Int
@@ -87,36 +94,88 @@ model EventScore {
   points    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
 }
 
-model Questions {
-  id         Int      @id @default(autoincrement()) 
+model Question {
+  id        Int      @id @default(autoincrement())
   eventId   Int
   event     Event    @relation(fields: [eventId], references: [id])
   question  String
-  answer    String
+  answer    String?
   points    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  predictions Predictions[]
+  messageId String?
+  predictions Prediction[]
 }
 
-model Predictions {
-  id         Int      @id @default(autoincrement()) 
-userId   Int
-  user       User     @relation(fields: [userId], references: [id])
+model Prediction {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  guildId    Int
+  guild      Guild     @relation(fields: [guildId], references: [id])
+  eventId    Int
+  event      Event     @relation(fields: [eventId], references: [id])
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+  answer     String
+  accuracy   Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+}
+
+model Season {
+  id        Int      @id @default(autoincrement())
   guildId   Int
   guild     Guild    @relation(fields: [guildId], references: [id])
-  eventId   Int
-  event     Event    @relation(fields: [eventId], references: [id])
-questionId Int
-  question  Questions @relation(fields: [questionId], references: [id])
-  answer    String
-  accuracy  Int
+  name      String
+  startDate DateTime @default(now())
+  endDate   DateTime @default(now())
+  active    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, guildId, eventId])
+  Seasons_Score SeasonScore[]
+}
+
+model SeasonScore {
+  id          Int      @id @default(autoincrement())
+  seasonId    Int
+  season      Season  @relation(fields: [seasonId], references: [id])
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  guildId     Int
+  guild       Guild    @relation(fields: [guildId], references: [id])
+  totalPoints Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EventRating {
+  id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  guildId Int
+  guild Guild @relation(fields: [guildId], references: [id])
+  eventId Int
+  event Event @relation(fields: [eventId], references: [id])
+  rating    Decimal  @db.Decimal(3, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MatchRating {
+  id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  guildId Int
+  guild Guild @relation(fields: [guildId], references: [id])
+  matchId String
+  rating   Decimal  @db.Decimal(3, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, guildId, matchId])
+  @@index([userId])
 }
