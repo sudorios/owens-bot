@@ -1,7 +1,7 @@
 const Punto = require('../../models/Punto');
 const ActiveSeason = require('../../models/ActiveSeason');
-const { getSeasonIndex } = require('../../utils/seasonUtils');
-const { sendRanking } = require('../../utils/rankingUtils');
+const { getSeasonIndex } = require('../../src/utils/seasonUtils');
+const { sendRanking } = require('../../src/utils/rankingUtils');
 
 module.exports = async (message) => {
     const activeSeasonDoc = await ActiveSeason.findOne({ guildID: message.guild.id });

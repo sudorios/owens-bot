@@ -1,5 +1,5 @@
 const Punto = require('../../models/Punto');
-const { sendRanking } = require('../../utils/rankingUtils');
+const { sendRanking } = require('../../src/utils/rankingUtils');
 
 module.exports = async (message) => {
     const documentos = await Punto.find({ guildID: message.guild.id });
