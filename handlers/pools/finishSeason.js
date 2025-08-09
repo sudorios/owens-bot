@@ -1,7 +1,7 @@
 const Punto = require('../../models/Punto');
 const SeasonWinner = require('../../models/seasonWinner');
 const ActiveSeason = require('../../models/ActiveSeason');
-const { getSeasonIndex, getSeasonNameByIndex } = require('../../utils/seasonUtils');
+const { getSeasonIndex, getSeasonNameByIndex } = require('../../src/utils/seasonUtils');
 
 module.exports = async (message) => {
     const guildID = message.guild.id;

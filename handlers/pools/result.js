@@ -1,5 +1,5 @@
 const Punto = require('../../models/Punto');
-const { getOrCreateActiveSeason, getSeasonIndex } = require('../../utils/seasonUtils');
+const { getOrCreateActiveSeason, getSeasonIndex } = require('../../src/utils/seasonUtils');
 
 module.exports = async (message, quinielas, resultados) => {
     const [_, mensajeID, emojiGanador] = message.content.split(' ');

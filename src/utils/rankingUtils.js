@@ -1,4 +1,4 @@
-const Punto = require('../models/Punto');
+const Punto = require('../../models/Punto');
 
 const CHUNKSIZE = 15;
 
