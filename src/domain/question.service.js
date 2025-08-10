@@ -1,25 +1,50 @@
-const { getEventById, findOpenDuplicateQuestion, createQuestion, attachMessageId } = require('../data/question.repo.js');
+const {
+  getEventById,
+  findOpenDuplicateQuestion,
+  createQuestionWithOptions,
+  attachMessageMeta,
+} = require('../data/question.repo.js');
+
 const { ensureGuildAndUser } = require('../data/event.repo.js');
 
-function normalizeAddQuestionInput({ eventId, text, points }) {
+function sanitizeOptions(raw) {
+  if (!raw) return ['Yes', 'No'];
+  const arr = raw.split(',').map(s => s.trim()).filter(Boolean);
+  const uniq = Array.from(new Set(arr));          
+  const cut  = uniq.map(s => s.slice(0, 55));
+  if (cut.length < 2) return ['Yes', 'No'];
+  return cut.slice(0, 10);
+}
+
+function normalizeAddQuestionInput({ eventId, text, points, options, hours }) {
   const eid = Number(eventId);
   if (!Number.isInteger(eid) || eid <= 0) throw new Error('eventId debe ser un entero positivo.');
   if (!text || !text.trim()) throw new Error('text es requerido.');
   const pts = points != null ? Number(points) : 1;
   if (!Number.isFinite(pts) || pts < 0) throw new Error('points debe ser un número ≥ 0.');
-  return { eventId: eid, text: text.trim(), points: pts };
+  const opts = sanitizeOptions(options);
+  let hrs = hours != null ? Number(hours) : 24;
+  if (!Number.isFinite(hrs) || hrs < 1) hrs = 24;
+  if (hrs > 768) hrs = 768;
+  return { eventId: eid, text: text.trim(), points: pts, options: opts, pollDurationHours: hrs };
 }
 
 async function createQuestionForEvent({
-  prisma, guildIdStr, guildName = 'Unknown', discordUserId, username,
-  eventId, text, points = 1,
+  prisma,
+  guildIdStr,
+  guildName = 'Unknown',
+  discordUserId,
+  username,
+  eventId,
+  text,
+  points = 1,
+  options,              
+  pollDurationHours,  
 }) {
   if (!prisma) throw new Error('Prisma no inicializado');
 
   return prisma.$transaction(async (tx) => {
-    const { guildInternalId, userInternalId } = await ensureGuildAndUser(tx, {
-      guildIdStr, guildName, discordUserId, username,
-    });
+    await ensureGuildAndUser(tx, { guildIdStr, guildName, discordUserId, username });
 
     const event = await getEventById(tx, eventId);
     if (!event) throw new Error(`Event con id ${eventId} no existe.`);
@@ -27,14 +52,27 @@ async function createQuestionForEvent({
     const dup = await findOpenDuplicateQuestion(tx, { eventId, text });
     if (dup) throw new Error(`Ya existe una pregunta abierta igual para este evento (Question ID ${dup.id}).`);
 
-    const question = await createQuestion(tx, { eventId, text, points });
-    return { question, event, guildInternalId, userInternalId };
+    const question = await createQuestionWithOptions(tx, {
+      eventId,
+      text,
+      points,
+      options,
+      pollDurationHours,
+    });
+
+    return { question, event };
   });
 }
 
-async function attachQuestionMessage({ prisma, questionId, messageId }) {
+async function attachQuestionMessage({ prisma, questionId, messageId, channelId }) {
   if (!prisma) throw new Error('Prisma no inicializado');
-  return prisma.$transaction(async (tx) => attachMessageId(tx, { questionId, messageId }));
+  return prisma.$transaction(async (tx) => {
+    return attachMessageMeta(tx, { questionId, messageId, channelId });
+  });
 }
 
-module.exports = { normalizeAddQuestionInput, createQuestionForEvent, attachQuestionMessage };
+module.exports = {
+  normalizeAddQuestionInput,
+  createQuestionForEvent,
+  attachQuestionMessage,
+};
