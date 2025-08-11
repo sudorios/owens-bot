@@ -1,4 +1,3 @@
-// src/commands/newSeason.js
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { startNewSeason } = require('../domain/season.service');
 
