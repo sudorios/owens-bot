@@ -1,16 +1,17 @@
 require('dotenv').config();
 
 const { Client, REST, Routes } = require('discord.js');
-const { intents } = require('./config/intents');                  
-const loadEvents = require('./loaders/eventLoader');             
-const { loadSlashCommands } = require('./loaders/commandRegistry');
-const { prisma } = require('./lib/prisma');                      
+const { intents } = require('./config/intents');
+const loadEvents = require('./loaders/eventLoader');
+
+const { loadCommands } = require('./loaders/commandRegistry');
+
+const { prisma } = require('./lib/prisma');
 
 const client = new Client({ intents });
-
 client.ctx = { prisma };
 
-const commandsJson = loadSlashCommands(client);
+const commandsJson = loadCommands(client);
 
 async function maybeRegisterCommands() {
   if (process.env.REGISTER_COMMANDS_ON_START !== 'true') return;
@@ -19,7 +20,6 @@ async function maybeRegisterCommands() {
     console.error('❌ Falta CLIENT_ID en .env para registrar comandos.');
     return;
   }
-
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
   try {
     if (process.env.GUILD_ID) {
