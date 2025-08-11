@@ -1,8 +1,11 @@
-
-async function upsertGuildByDiscordId(tx, discordGuildIdStr, guildName = 'Unknown') {
-  const guildIdBigInt = BigInt(discordGuildIdStr); 
+async function upsertGuildByDiscordId(
+  tx,
+  discordGuildIdStr,
+  guildName = "Unknown"
+) {
+  const guildIdBigInt = BigInt(discordGuildIdStr);
   return tx.guild.upsert({
-    where: { guildId: guildIdBigInt }, 
+    where: { guildId: guildIdBigInt },
     update: {
       name: guildName,
     },
@@ -13,11 +16,13 @@ async function upsertGuildByDiscordId(tx, discordGuildIdStr, guildName = 'Unknow
   });
 }
 
-async function findActiveSeason(tx, guildInternalId) {
-  return tx.season.findFirst({
-    where: { guildId: guildInternalId, active: true },
-    orderBy: { startDate: 'desc' },
+async function findActiveSeason(tx, guildId) {
+  const s = await tx.season.findFirst({
+    where: { guildId, active: true },
+    select: { id: true },
+    orderBy: { id: "desc" },
   });
+  return s?.id ?? null;
 }
 
 async function closeSeason(tx, seasonId) {
@@ -40,14 +45,20 @@ async function createSeason(tx, { guildInternalId, name }) {
   });
 }
 
-async function closeActiveSeasonAndCreate({ tx, discordGuildIdStr, guildName, requestedName }) {
+async function closeActiveSeasonAndCreate({
+  tx,
+  discordGuildIdStr,
+  guildName,
+  requestedName,
+}) {
   const guild = await upsertGuildByDiscordId(tx, discordGuildIdStr, guildName);
   let closedSeason = null;
-  const active = await findActiveSeason(tx, guild.id); 
+  const active = await findActiveSeason(tx, guild.id);
   if (active) {
     closedSeason = await closeSeason(tx, active.id);
   }
-  const name = requestedName || `Season ${new Date().toISOString().slice(0, 10)}`;
+  const name =
+    requestedName || `Season ${new Date().toISOString().slice(0, 10)}`;
   const newSeason = await createSeason(tx, {
     guildInternalId: guild.id,
     name,

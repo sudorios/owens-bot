@@ -4,5 +4,7 @@ module.exports.intents = [
   GatewayIntentBits.Guilds,
   // GatewayIntentBits.GuildMembers,
   // GatewayIntentBits.GuildMessageReactions,
-  // GatewayIntentBits.GuildMessagePolls,
+  GatewayIntentBits.GuildMessagePolls,
+  GatewayIntentBits.MessageContent,
+  GatewayIntentBits.GuildMessages,
 ];

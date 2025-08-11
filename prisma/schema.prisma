@@ -68,6 +68,8 @@ model Event {
   guildId   Int
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
+  season    Season?  @relation(fields: [seasonId], references: [id])
+  seasonId  Int?     // ← nuevo
   name      String
   state     String
   createdAt DateTime @default(now())
@@ -80,6 +82,7 @@ model Event {
 
   @@index([guildId])
   @@index([userId])
+  @@index([seasonId])
 }
 
 model EventScore {
@@ -158,6 +161,8 @@ model Season {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  
+  events     Event[]
   Seasons_Score SeasonScore[]
 }
 

@@ -63,9 +63,38 @@ async function attachMessageMeta(tx, { questionId, messageId, channelId }) {
   });
 }
 
+async function findQuestionByMessageId(tx, { messageId }) {
+  return tx.question.findFirst({
+    where: { messageId: String(messageId) },
+    include: { event: true, options: true, predictions: true },
+  });
+}
+
+async function getOptionIdByIndex(tx, { questionId, index }) {
+  const opt = await tx.questionOption.findUnique({
+    where: { questionId_index: { questionId, index } },
+    select: { id: true },
+  });
+  return opt?.id || null;
+}
+
+async function findWinningPredictions(tx, { questionId, optionId }) {
+  return tx.prediction.findMany({
+    where: { questionId, optionId },
+    select: { id: true, userId: true, guildId: true, eventId: true },
+  });
+}
+async function closeQuestionWithAnswer(tx, { questionId, answer }) {
+  return tx.question.update({ where: { id: questionId }, data: { answer } });
+}
+
 module.exports = {
   getEventById,
   findOpenDuplicateQuestion,
   createQuestionWithOptions,
   attachMessageMeta,
+  findQuestionByMessageId,
+  getOptionIdByIndex,
+  findWinningPredictions,
+  closeQuestionWithAnswer,
 };
