@@ -30,8 +30,18 @@ async function createEvent(
   });
 }
 
+async function getEvent(tx, eventId) {
+  return tx.event.findUnique({
+    where: { id: Number(eventId) },
+    select: { id: true, name: true },
+  });
+}
+
 async function getSeasonIdByEventId(tx, eventId) {
-  const ev = await tx.event.findUnique({ where: { id: eventId }, select: { seasonId: true } });
+  const ev = await tx.event.findUnique({
+    where: { id: eventId },
+    select: { seasonId: true },
+  });
   return ev?.seasonId || null;
 }
 
@@ -41,15 +51,20 @@ async function upsertEventScore(tx, { userId, guildId, eventId, delta }) {
     select: { id: true, points: true },
   });
   if (row) {
-    return tx.eventScore.update({ where: { id: row.id }, data: { points: row.points + delta } });
+    return tx.eventScore.update({
+      where: { id: row.id },
+      data: { points: row.points + delta },
+    });
   }
-  return tx.eventScore.create({ data: { userId, guildId, eventId, points: delta } });
+  return tx.eventScore.create({
+    data: { userId, guildId, eventId, points: delta },
+  });
 }
-
 
 module.exports = {
   ensureGuildAndUser,
+  getEvent,
   createEvent,
   getSeasonIdByEventId,
-  upsertEventScore
+  upsertEventScore,
 };
