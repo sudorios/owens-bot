@@ -86,6 +86,23 @@ async function getSeasonNameById(tx, seasonId) {
   return s;
 }
 
+
+async function countSeasonsForGuild(tx, guildInternalId) {
+  return tx.season.count({
+    where: { guildId: Number(guildInternalId) },
+  });
+}
+
+async function listSeasonsForGuildBasic(tx, { guildInternalId, skip = 0, take = 10 }) {
+  return tx.season.findMany({
+    where: { guildId: Number(guildInternalId) },
+    select: { id: true, name: true, active: true },
+    orderBy: { id: 'desc' }, 
+    skip,
+    take,
+  });
+}
+
 module.exports = {
   upsertGuildByDiscordId,
   findActiveSeason,
@@ -94,4 +111,6 @@ module.exports = {
   closeActiveSeasonAndCreate,
   upsertSeasonScore,
   getSeasonNameById,
+  countSeasonsForGuild,
+  listSeasonsForGuildBasic,
 };
