@@ -67,15 +67,31 @@ async function closeActiveSeasonAndCreate({
   return { closedSeason, newSeason };
 }
 
-async function upsertSeasonScore(tx, { userId, guildId, seasonId, delta }) {
-  const row = await tx.seasonScore.findFirst({
-    where: { userId, guildId, seasonId },
-    select: { id: true, totalPoints: true },
+
+
+async function getSeasonNameById(tx, seasonId) {
+  const s = await tx.season.findUnique({
+    where: { id: Number(seasonId) },
+    select: { id: true, name: true },
   });
-  if (row) {
-    return tx.seasonScore.update({ where: { id: row.id }, data: { totalPoints: row.totalPoints + delta } });
-  }
-  return tx.seasonScore.create({ data: { userId, guildId, seasonId, totalPoints: delta } });
+  return s;
+}
+
+
+async function countSeasonsForGuild(tx, guildInternalId) {
+  return tx.season.count({
+    where: { guildId: Number(guildInternalId) },
+  });
+}
+
+async function listSeasonsForGuildBasic(tx, { guildInternalId, skip = 0, take = 10 }) {
+  return tx.season.findMany({
+    where: { guildId: Number(guildInternalId) },
+    select: { id: true, name: true, active: true },
+    orderBy: { id: 'desc' }, 
+    skip,
+    take,
+  });
 }
 
 module.exports = {
@@ -84,5 +100,7 @@ module.exports = {
   closeSeason,
   createSeason,
   closeActiveSeasonAndCreate,
-  upsertSeasonScore
+  getSeasonNameById,
+  countSeasonsForGuild,
+  listSeasonsForGuildBasic,
 };
