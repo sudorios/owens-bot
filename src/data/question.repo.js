@@ -22,16 +22,17 @@ async function createQuestionWithOptions(tx, {
   eventId,
   text,
   points,
-  options,             
-  pollDurationHours,  
+  options,
+  pollDurationHours,
 }) {
   const pollEndsAt = pollDurationHours ? nowPlusHours(pollDurationHours) : null;
+  const safePoints = Math.max(1, Number(points) || 1); 
 
   const question = await tx.question.create({
     data: {
       eventId: Number(eventId),
       question: text.trim(),
-      points: Number(points) || 1,
+      points: safePoints, 
       pollDurationHours: pollDurationHours ?? null,
       pollEndsAt,
     },
@@ -41,11 +42,7 @@ async function createQuestionWithOptions(tx, {
   for (let i = 0; i < options.length; i++) {
     const label = options[i];
     await tx.questionOption.create({
-      data: {
-        questionId: question.id,
-        index: i,
-        label,
-      },
+      data: { questionId: question.id, index: i, label },
     });
   }
 
