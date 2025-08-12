@@ -61,10 +61,28 @@ async function upsertEventScore(tx, { userId, guildId, eventId, delta }) {
   });
 }
 
+async function countEventsForSeason(tx, { seasonId, guildInternalId }) {
+  return tx.event.count({
+    where: { seasonId: Number(seasonId), guildId: Number(guildInternalId) },
+  });
+}
+
+async function listEventsForSeason(tx, { seasonId, guildInternalId, skip = 0, take = 10 }) {
+  return tx.event.findMany({
+    where: { seasonId: Number(seasonId), guildId: Number(guildInternalId) },
+    select: { id: true, name: true },
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take,
+  });
+}
+
 module.exports = {
   ensureGuildAndUser,
   getEvent,
   createEvent,
   getSeasonIdByEventId,
   upsertEventScore,
+  countEventsForSeason,
+  listEventsForSeason
 };

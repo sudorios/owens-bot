@@ -78,11 +78,20 @@ async function upsertSeasonScore(tx, { userId, guildId, seasonId, delta }) {
   return tx.seasonScore.create({ data: { userId, guildId, seasonId, totalPoints: delta } });
 }
 
+async function getSeasonNameById(tx, seasonId) {
+  const s = await tx.season.findUnique({
+    where: { id: Number(seasonId) },
+    select: { id: true, name: true },
+  });
+  return s;
+}
+
 module.exports = {
   upsertGuildByDiscordId,
   findActiveSeason,
   closeSeason,
   createSeason,
   closeActiveSeasonAndCreate,
-  upsertSeasonScore
+  upsertSeasonScore,
+  getSeasonNameById,
 };

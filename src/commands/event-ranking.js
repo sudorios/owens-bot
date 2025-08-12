@@ -16,7 +16,7 @@ module.exports = {
     const eventId = interaction.options.getInteger('event_id', true);
     const perPage = PER_PAGE;
 
-    await interaction.deferReply({ ephemeral: false });
+    await interaction.deferReply();
 
     const bundle = await getEventRankingFirstPage({
       prisma: ctx.prisma,
