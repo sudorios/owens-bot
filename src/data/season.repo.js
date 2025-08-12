@@ -67,16 +67,7 @@ async function closeActiveSeasonAndCreate({
   return { closedSeason, newSeason };
 }
 
-async function upsertSeasonScore(tx, { userId, guildId, seasonId, delta }) {
-  const row = await tx.seasonScore.findFirst({
-    where: { userId, guildId, seasonId },
-    select: { id: true, totalPoints: true },
-  });
-  if (row) {
-    return tx.seasonScore.update({ where: { id: row.id }, data: { totalPoints: row.totalPoints + delta } });
-  }
-  return tx.seasonScore.create({ data: { userId, guildId, seasonId, totalPoints: delta } });
-}
+
 
 async function getSeasonNameById(tx, seasonId) {
   const s = await tx.season.findUnique({
@@ -109,7 +100,6 @@ module.exports = {
   closeSeason,
   createSeason,
   closeActiveSeasonAndCreate,
-  upsertSeasonScore,
   getSeasonNameById,
   countSeasonsForGuild,
   listSeasonsForGuildBasic,

@@ -13,7 +13,7 @@ const {
   getSeasonIdByEventId,
 } = require("../data/event.repo.js");
 
-const { upsertSeasonScore } = require("../data/season.repo.js");
+const { upsertSeasonScore } = require("../data/seasonScore.repo.js");
 const { upsertGuildUserPoints } = require("../data/guildUser.repo.js");
 const { updateAccuracy } = require("../data/prediction.repo.js");
 
