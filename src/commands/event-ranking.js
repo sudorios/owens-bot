@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getEventRankingFirstPage } = require('../domain/eventScore.service');
-const { buildRankingEmbed, buildPagingRow, attachEventRankingPager } = require('../utils/ui/ranking');
+const { buildRankingEmbed, buildPagingRowRank, attachEventRankingPager } = require('../utils/ui/event_score');
 
 const PER_PAGE = 10;
 const COLLECTOR_MS = 60_000;
@@ -37,7 +37,7 @@ module.exports = {
     });
 
     const components = bundle.totalPages > 1
-      ? [buildPagingRow({ eventId, perPage, page: bundle.page, totalPages: bundle.totalPages })]
+      ? [buildPagingRowRank({ eventId, perPage, page: bundle.page, totalPages: bundle.totalPages })]
       : [];
 
     const msg = await interaction.editReply({ embeds: [embed], components });

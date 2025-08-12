@@ -1,29 +1,27 @@
-const { SlashCommandBuilder } = require('discord.js');
-const {
-  getEventInfoFirstPage,
-} = require('../domain/event.service');
+const { SlashCommandBuilder } = require("discord.js");
+const { getEventInfoFirstPage } = require("../domain/event.service");
 
 const {
   buildEventInfoTable,
   buildEventInfoEmbed,
-  buildPagingRowInfo,
   attachEventInfoPager,
-} = require('../utils/ui/ranking');
+  buildPagingRowEventInfo,
+} = require("../utils/ui/event");
 
-const PER_PAGE = 10;        
-const COLLECTOR_MS = 60_000; 
+const PER_PAGE = 10;
+const COLLECTOR_MS = 60_000;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('event-info')
-    .setDescription('Muestra una tabla con los eventos de la season activa.')
+    .setName("event-info")
+    .setDescription("Muestra una tabla con los eventos de la season activa.")
     .setDMPermission(false),
 
   async execute(interaction, ctx) {
-    await interaction.deferReply(); 
+    await interaction.deferReply();
 
     const guildId = interaction.guildId;
-    const guildName = interaction.guild?.name || 'Unknown';
+    const guildName = interaction.guild?.name || "Unknown";
     const perPage = PER_PAGE;
 
     const bundle = await getEventInfoFirstPage({
@@ -35,7 +33,7 @@ module.exports = {
 
     if (!bundle.season) {
       return interaction.editReply({
-        content: 'ℹ️ No hay una season activa en este servidor.',
+        content: "ℹ️ No hay una season activa en este servidor.",
       });
     }
 
@@ -50,7 +48,13 @@ module.exports = {
 
     const components =
       bundle.totalPages > 1
-        ? [buildPagingRowInfo({ page: bundle.page, totalPages: bundle.totalPages, perPage })]
+        ? [
+            buildPagingRowEventInfo({
+              page: bundle.page,
+              totalPages: bundle.totalPages,
+              perPage,
+            }),
+          ]
         : [];
 
     const msg = await interaction.editReply({ embeds: [embed], components });
