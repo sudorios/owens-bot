@@ -8,4 +8,12 @@ async function upsertGuildByDiscordId(tx, guildIdStr, guildName = 'Unknown') {
   });
 }
 
-module.exports = { upsertGuildByDiscordId };
+async function getInternalGuildId(tx, discordGuildId) {
+  const guild = await tx.guild.findUnique({
+    where: { guildId: BigInt(discordGuildId) }, 
+  });
+  if (!guild) throw new Error(`Guild not found for Discord ID ${discordGuildId}`);
+  return guild.id; 
+}
+
+module.exports = { upsertGuildByDiscordId, getInternalGuildId };
