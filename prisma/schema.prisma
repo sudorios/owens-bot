@@ -17,6 +17,10 @@ model User {
   id       Int    @id @default(autoincrement())
   userId   BigInt @unique
   username String
+  email String?
+  avatar String?
+  createAt DateTime? @default(now())
+  updateAt DateTime? @updatedAt
 
   events        Event[]
   guildUsers    GuildUser[]
@@ -25,6 +29,7 @@ model User {
   seasonsScores SeasonScore[]
   eventRatings EventRating[]
   matchRatings MatchRating[]
+  eventWinners EventWinner[]
 }
 
 model Guild {
@@ -33,7 +38,7 @@ model Guild {
   name     String
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
-
+  avatar String?
   events        Event[]
   guildUsers    GuildUser[]
   eventScores   EventScore[]
@@ -42,22 +47,30 @@ model Guild {
   seasonsScores SeasonScore[]
   eventRatings EventRating[]
   matchRatings MatchRating[]
+  eventWinners EventWinner[]
+}
+
+enum GuildRole {
+  DEVELOPER
+  ADMIN
+  MODERATOR
+  USER
 }
 
 model GuildUser {
-  id           Int      @id @default(autoincrement())
-  guild        Guild    @relation(fields: [guildId], references: [id])
+  id           Int        @id @default(autoincrement())
+  guild        Guild      @relation(fields: [guildId], references: [id])
   guildId      Int
-  user         User     @relation(fields: [userId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
   userId       Int
-  role         String
-  points       Int      @default(0)
-  lastPosition Int      @default(0)
-  position     Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role         GuildRole  @default(USER)
+  points       Int        @default(0)
+  lastPosition Int        @default(0)
+  position     Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  @@unique([guildId, userId])
+  @@unique([guildId, userId], name: "guild_user_unique")  
   @@index([guildId])
   @@index([userId])
 }
@@ -79,6 +92,7 @@ model Event {
   questions    Question[]
   predictions  Prediction[]
   eventRatings EventRating[]
+  eventWinners EventWinner[]
 
   @@index([guildId])
   @@index([userId])
@@ -96,6 +110,7 @@ model EventScore {
   points    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
 }
 
 model Question {
@@ -179,6 +194,8 @@ model SeasonScore {
   updatedAt   DateTime @updatedAt
   position   Int      @default(0)
   lastPosition Int     @default(0)
+
+  @@unique([seasonId, userId], name: "season_user_unique")  
 }
 
 model EventRating {
@@ -206,4 +223,19 @@ model MatchRating {
   updatedAt DateTime @updatedAt
   @@unique([userId, guildId, matchId])
   @@index([userId])
+}
+
+model EventWinner {
+  id        Int      @id @default(autoincrement())
+  eventId Int
+  userId    Int
+  guildId   Int
+  user      User     @relation(fields: [userId], references: [id])
+  points   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  event     Event    @relation(fields: [eventId], references: [id])
+  guild     Guild    @relation(fields: [guildId], references: [id])
+
+  @@unique([eventId, userId])
 }
