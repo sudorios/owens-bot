@@ -238,4 +238,5 @@ model EventWinner {
   guild     Guild    @relation(fields: [guildId], references: [id])
 
   @@unique([eventId, userId])
+  
 }
