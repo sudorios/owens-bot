@@ -10,7 +10,7 @@ async function upsertGuildUserPoints(tx, { userId, guildId, delta }) {
     });
   }
   return tx.guildUser.create({
-    data: { userId, guildId, points: delta, role: "member" },
+    data: { userId, guildId, points: delta, role: "USER" },
   });
 }
 

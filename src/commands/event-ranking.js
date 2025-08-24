@@ -45,8 +45,13 @@ module.exports = {
     if (bundle.totalPages > 1) {
       attachEventRankingPager({
         message: msg,
+        interaction,  
         ctx,
-        meta: { invokerId: interaction.user.id, totalPages: bundle.totalPages },
+        meta: { 
+          invokerId: interaction.user.id, 
+          totalPages: bundle.totalPages,
+          eventId 
+        },
         ttlMs: COLLECTOR_MS,
       });
     }
