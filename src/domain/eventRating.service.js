@@ -1,7 +1,5 @@
 
 async function addEventVote({ prisma, guildId, userId, event, rating }) {
-  console.log("[addEventVote] Internal IDs:", { guildId, userId, event, rating });
-
   try {
     const detail = await prisma.eventRatingDetail.upsert({
       where: {
@@ -46,4 +44,31 @@ async function addEventVote({ prisma, guildId, userId, event, rating }) {
   }
 }
 
-module.exports = { addEventVote };
+async function getEventRatingsBundle({ prisma, guildId, perPage = 5, page = 1 }) {
+  const skip = (page - 1) * perPage;
+
+  const total = await prisma.eventRating.count({
+    where: { guildId },
+  });
+
+  const ratings = await prisma.eventRating.findMany({
+    where: { guildId },
+    orderBy: { id: "asc" },
+    skip,
+    take: perPage,
+  });
+
+  const description = ratings
+    .map(r => `⭐ **${r.event}** → Promedio: ${r.rating}`)
+    .join("\n");
+
+  return {
+    description: description || "📭 No hay eventos calificados aún.",
+    ratings,
+    total,
+    page,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
+  };
+}
+
+module.exports = { addEventVote, getEventRatingsBundle };
