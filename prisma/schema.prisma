@@ -30,6 +30,7 @@ model User {
   eventRatings EventRating[]
   matchRatings MatchRating[]
   eventWinners EventWinner[]
+  eventRatingDetails EventRatingDetail[]
 }
 
 model Guild {
@@ -48,6 +49,7 @@ model Guild {
   eventRatings EventRating[]
   matchRatings MatchRating[]
   eventWinners EventWinner[]
+  eventRatingDetails EventRatingDetail[]
 }
 
 enum GuildRole {
@@ -91,7 +93,7 @@ model Event {
   eventsScores EventScore[]
   questions    Question[]
   predictions  Prediction[]
-  eventRatings EventRating[]
+
   eventWinners EventWinner[]
 
   @@index([guildId])
@@ -199,17 +201,37 @@ model SeasonScore {
 }
 
 model EventRating {
-  id Int @id @default(autoincrement())
-  userId Int
-  user User @relation(fields: [userId], references: [id])
-  guildId Int
-  guild Guild @relation(fields: [guildId], references: [id])
-  eventId Int
-  event Event @relation(fields: [eventId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  guildId   Int
+  guild     Guild    @relation(fields: [guildId], references: [id])
+  event     String
   rating    Decimal  @db.Decimal(3, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  details   EventRatingDetail[]
+  @@unique([guildId, event])
 }
+
+model EventRatingDetail {
+  id        Int      @id @default(autoincrement())
+  rating    Int     
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  guildId   Int
+  guild     Guild    @relation(fields: [guildId], references: [id])
+  event     String
+  createdAt DateTime @default(now())
+
+  eventRatingId Int
+  eventRating   EventRating @relation(fields: [eventRatingId], references: [id])
+  
+
+  @@unique([guildId, userId, event], name: "guildId_userId_event")
+}
+
 
 model MatchRating {
   id Int @id @default(autoincrement())
