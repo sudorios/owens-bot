@@ -45,4 +45,34 @@ async function addMatchVote({ prisma, guildId, userId, match, rating }) {
   }
 }
 
-module.exports = { addMatchVote };
+async function getMatchRatingsBundle({ prisma, guildId, perPage = 5, page = 1 }) {
+  const skip = (page - 1) * perPage;
+
+  const total = await prisma.matchRating.count({
+    where: { guildId },
+  });
+
+  const ratings = await prisma.matchRating.findMany({
+    where: { guildId },
+    orderBy: { id: "asc" },
+    skip,
+    take: perPage,
+  });
+
+  const description = ratings
+    .map((r) => `⭐ **${r.match}** → Promedio: ${r.rating}`)
+    .join("\n");
+
+  return {
+    description: description || "📭 No hay luchas calificadas aún.",
+    ratings,
+    total,
+    page,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
+  };
+}
+
+module.exports = {
+  addMatchVote,
+  getMatchRatingsBundle,
+};
