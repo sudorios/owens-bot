@@ -58,7 +58,7 @@ module.exports = {
         }
       }
 
-      const avg = await addEventVote({
+      await addEventVote({
         prisma,
         guildId: guildInternalId,
         userId: userInternalId,
@@ -66,13 +66,6 @@ module.exports = {
         rating,
       });
 
-      try {
-        await user.send(
-          `✅ Has calificado **${eventLabel}** con **${rating} estrellas**. Promedio actual: ${avg.toFixed(2)}`
-        );
-      } catch (err) {
-        console.error("No se pudo enviar DM", err);
-      }
 
     } catch (err) {
       console.error("Error al registrar la calificación:", err);
