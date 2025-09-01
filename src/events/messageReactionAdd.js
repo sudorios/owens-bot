@@ -1,4 +1,5 @@
 const { addEventVote } = require("../domain/eventRating.service");
+const { addMatchVote } = require("../domain/matchRating.service");
 const { prisma } = require("../lib/prisma.js");
 const { ensureGuildAndUser } = require("../data/event.repo.js");
 
@@ -16,18 +17,29 @@ module.exports = {
     if (user.bot) return;
 
     const message = reaction.message;
-    if (!message.content.startsWith("⭐ Califica el evento")) return;
+    const content = message.content;
 
-    const eventMatch = message.content.match(/\*\*(.+)\*\*/);
-    if (!eventMatch) return;
-    const eventLabel = eventMatch[1];
+    let type, label;
+    if (content.startsWith("⭐ Califica el evento")) {
+      type = "event";
+      const match = content.match(/\*\*(.+)\*\*/);
+      if (!match) return;
+      label = match[1];
+    } else if (content.startsWith("🎮 Califica el match")) {
+      type = "match";
+      const match = content.match(/\*\*(.+)\*\*/);
+      if (!match) return;
+      label = match[1];
+    } else {
+      return;
+    }
 
     const emoji = reaction.emoji.name;
     const rating = emojiToRating[emoji];
     if (!rating) return;
 
     if (!message.guild || !message.guild.id) {
-      console.warn("[rate-event] Guild o guild.id indefinido, ignorando reacción.");
+      console.warn("[rate] Guild o guild.id indefinido, ignorando reacción.");
       return;
     }
 
@@ -39,33 +51,58 @@ module.exports = {
         username: user.username,
       });
 
-      const existingVote = await prisma.eventRatingDetail.findUnique({
-        where: {
-          guildId_userId_event: {
-            guildId: guildInternalId,
-            userId: userInternalId,
-            event: eventLabel,
+      if (type === "event") {
+        const existingVote = await prisma.eventRatingDetail.findUnique({
+          where: {
+            guildId_userId_event: { guildId: guildInternalId, userId: userInternalId, event: label },
           },
-        },
-      });
+        });
 
-      if (existingVote) {
-        const userReactions = message.reactions.cache.filter(
-          r => r.users.cache.has(user.id) && r.emoji.name !== emoji
-        );
-        for (const r of userReactions.values()) {
-          await r.users.remove(user.id);
+        if (existingVote) {
+          const userReactions = message.reactions.cache.filter(
+            r => r.users.cache.has(user.id) && r.emoji.name !== emoji
+          );
+          for (const r of userReactions.values()) {
+            await r.users.remove(user.id);
+          }
         }
+
+        await addEventVote({
+          prisma,
+          guildId: guildInternalId,
+          userId: userInternalId,
+          event: label,
+          rating,
+        });
+
+      } else if (type === "match") {
+        const matchRating = await prisma.matchRating.findUnique({
+          where: { guildId_match: { guildId: guildInternalId, match: label } }
+        });
+
+        const existingVote = matchRating
+          ? await prisma.matchRatingDetail.findUnique({
+              where: { userId_matchRatingId: { userId: userInternalId, matchRatingId: matchRating.id } }
+            })
+          : null;
+
+        if (existingVote) {
+          const userReactions = message.reactions.cache.filter(
+            r => r.users.cache.has(user.id) && r.emoji.name !== emoji
+          );
+          for (const r of userReactions.values()) {
+            await r.users.remove(user.id);
+          }
+        }
+
+        await addMatchVote({
+          prisma,
+          guildId: guildInternalId,
+          userId: userInternalId,
+          match: label,
+          rating,
+        });
       }
-
-      await addEventVote({
-        prisma,
-        guildId: guildInternalId,
-        userId: userInternalId,
-        event: eventLabel,
-        rating,
-      });
-
 
     } catch (err) {
       console.error("Error al registrar la calificación:", err);
