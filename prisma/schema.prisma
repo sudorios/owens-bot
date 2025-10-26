@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,263 +7,246 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int    @id @default(autoincrement())
-  userId   BigInt @unique
-  username String
-  email String?
-  avatar String?
-  createAt DateTime? @default(now())
-  updateAt DateTime? @updatedAt
-
-  events        Event[]
-  guildUsers    GuildUser[]
-  userScores    EventScore[]
-  predictions   Prediction[]
-  seasonsScores SeasonScore[]
-  eventRatings EventRating[]
-  eventWinners EventWinner[]
-  eventRatingDetails EventRatingDetail[]
-  MatchRatingDetails MatchRatingDetail[]
+model catalog {
+  catalog_id     Int       @id(map: "pk_catalog")
+  code           String    @db.VarChar(50)
+  name           String    @db.VarChar(100)
+  description    String?
+  sort_order     Int?      @default(1)
+  reference_code String?   @db.VarChar(50)
+  value1         String?
+  value2         String?
+  prefix         String?   @db.VarChar(5)
+  enabled        Boolean   @default(true)
+  created        DateTime  @default(now()) @db.Timestamp(6)
+  created_by     String?   @db.VarChar(100)
+  modified       DateTime? @db.Timestamp(6)
+  modified_by    String?   @db.VarChar(100)
 }
 
-model Guild {
-  id       Int      @id @default(autoincrement())
-  guildId  BigInt   @unique
-  name     String
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-  avatar String?
-  events        Event[]
-  guildUsers    GuildUser[]
-  eventScores   EventScore[]
-  predictions   Prediction[]
-  seasons       Season[]
-  seasonsScores SeasonScore[]
-  eventRatings EventRating[]
-  matchRatings MatchRating[]
-  eventWinners EventWinner[]
-  eventRatingDetails EventRatingDetail[]
+model event {
+  event_id   Int      @id(map: "Event_pkey") @default(autoincrement())
+  guild_id   Int
+  user_id    Int
+  name       String
+  state_code String   @db.VarChar
+  created    DateTime @default(now())
+  updated    DateTime
+  season_id  Int?
+  enabled    Boolean?
+  created_by String?  @db.VarChar
+  updated_by String?  @db.VarChar
+
+  @@index([guild_id], map: "Event_guildId_idx")
+  @@index([season_id], map: "Event_seasonId_idx")
+  @@index([user_id], map: "Event_userId_idx")
 }
 
-enum GuildRole {
-  DEVELOPER
-  ADMIN
-  MODERATOR
-  USER
+model event_rating {
+  event_rating_id Int      @id(map: "EventRating_pkey") @default(autoincrement())
+  user_id         Int
+  guild_id        Int
+  rating          Decimal  @db.Decimal(3, 2)
+  created_at      DateTime @default(now())
+  updated_at      DateTime
+  event           String   @db.VarChar
+  enabled         Boolean?
+  created_by      String?  @db.VarChar
+  updated_by      String?  @db.VarChar
+
+  @@unique([guild_id, event], map: "EventRating_guildId_event_key")
 }
 
-model GuildUser {
-  id           Int        @id @default(autoincrement())
-  guild        Guild      @relation(fields: [guildId], references: [id])
-  guildId      Int
-  user         User       @relation(fields: [userId], references: [id])
-  userId       Int
-  role         GuildRole  @default(USER)
-  points       Int        @default(0)
-  lastPosition Int        @default(0)
-  position     Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+model event_rating_detail {
+  erating_detail_id Int       @id(map: "EventRatingDetail_pkey") @default(autoincrement())
+  rating            Int
+  user_id           Int
+  guild_id          Int
+  event             String    @db.VarChar
+  created           DateTime  @default(now())
+  event_rating_id   Int
+  updated           DateTime? @db.Timestamptz(6)
+  enabled           Boolean?
+  created_by        String?   @db.VarChar
+  updated_by        String?   @db.VarChar
 
-  @@unique([guildId, userId], name: "guild_user_unique")  
-  @@index([guildId])
-  @@index([userId])
+  @@unique([guild_id, user_id, event], map: "EventRatingDetail_guildId_userId_event_key")
 }
 
-model Event {
-  id        Int      @id @default(autoincrement())
-  guild     Guild    @relation(fields: [guildId], references: [id])
-  guildId   Int
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  season    Season?  @relation(fields: [seasonId], references: [id])
-  seasonId  Int?     
-  name      String
-  state     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  eventsScores EventScore[]
-  questions    Question[]
-  predictions  Prediction[]
-
-  eventWinners EventWinner[]
-
-  @@index([guildId])
-  @@index([userId])
-  @@index([seasonId])
+model event_score {
+  event_score_id Int      @id(map: "EventScore_pkey") @default(autoincrement())
+  user_id        Int
+  guild_id       Int
+  event_id       Int
+  points         Int
+  created        DateTime @default(now())
+  updated        DateTime
+  created_by     String?  @db.VarChar
+  updated_by     String?  @db.VarChar
+  enabled        Boolean?
 }
 
-model EventScore {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  guildId   Int
-  guild     Guild    @relation(fields: [guildId], references: [id])
-  eventId   Int
-  event     Event    @relation(fields: [eventId], references: [id])
-  points    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model event_winner {
+  event_winner_id Int      @id(map: "EventWinner_pkey") @default(autoincrement())
+  event_id        Int
+  user_id         Int
+  guild_id        Int
+  points          Int
+  created         DateTime @default(now())
+  updated         DateTime
+  created_by      String?  @db.VarChar
+  updated_by      String?  @db.VarChar
+  enabled         Boolean?
 
+  @@unique([event_id, user_id], map: "EventWinner_eventId_userId_key")
 }
 
-model Question {
-  id         Int       @id @default(autoincrement())
-  eventId    Int
-  event      Event     @relation(fields: [eventId], references: [id])
-  question   String
-  answer     String?
-  points     Int
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  messageId  String?
-  channelId  String?
-  pollDurationHours Int?
-  pollEndsAt        DateTime?
-  options     QuestionOption[]
-  predictions Prediction[]
+model guild {
+  id         Int      @id(map: "Guild_pkey") @default(autoincrement())
+  guild_id   BigInt   @unique(map: "Guild_guildId_key")
+  name       String
+  created    DateTime @default(now())
+  updated    DateTime
+  enabled    Boolean?
+  created_by String?  @db.VarChar
+  updated_by String?  @db.VarChar
 }
 
-model QuestionOption {
-  id         Int       @id @default(autoincrement())
-  questionId Int
-  question   Question  @relation(fields: [questionId], references: [id])
-  index      Int
-  label      String
-  emoji      String?
+model guild_user {
+  guild_user__id Int      @id(map: "GuildUser_pkey") @default(autoincrement())
+  guild_id       Int
+  user_id        Int
+  points         Int      @default(0)
+  last_position  Int      @default(0)
+  position       Int      @default(0)
+  created        DateTime @default(now())
+  updated        DateTime
+  enabled        Boolean?
+  created_by     String?  @db.VarChar
+  updated_by     String?  @db.VarChar
 
-  @@unique([questionId, index])
-  @@index([questionId])
-  predictions Prediction[] 
+  @@unique([guild_id, user_id], map: "GuildUser_guildId_userId_key")
+  @@index([guild_id], map: "GuildUser_guildId_idx")
+  @@index([user_id], map: "GuildUser_userId_idx")
 }
 
-model Prediction {
-  id         Int       @id @default(autoincrement())
-  userId     Int
-  user       User      @relation(fields: [userId], references: [id])
-  guildId    Int
-  guild      Guild     @relation(fields: [guildId], references: [id])
-  eventId    Int
-  event      Event     @relation(fields: [eventId], references: [id])
-  questionId Int
-  question   Question  @relation(fields: [questionId], references: [id])
-  optionId   Int?
-  option     QuestionOption? @relation(fields: [optionId], references: [id])
-  answer     String?
-  accuracy   Int
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+model match_rating {
+  match_rating_id Int      @id(map: "MatchRating_pkey") @default(autoincrement())
+  guild_id        Int
+  rating          Decimal  @db.Decimal(3, 2)
+  created         DateTime @default(now())
+  updated         DateTime
+  match           String
+  enabled         Boolean?
+  created_by      String?  @db.VarChar
+  updated_by      String?  @db.VarChar
 
-  @@unique([questionId, userId])
-  @@index([eventId])
-  @@index([guildId])
+  @@unique([guild_id, match], map: "MatchRating_guildId_match_key")
 }
 
-model Season {
-  id        Int      @id @default(autoincrement())
-  guildId   Int
-  guild     Guild    @relation(fields: [guildId], references: [id])
-  name      String
-  startDate DateTime @default(now())
-  endDate   DateTime @default(now())
-  active    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model match_rating_detail {
+  mrating_detail_id Int      @id(map: "MatchRatingDetail_pkey") @default(autoincrement())
+  match_rating_id   Int
+  user_id           Int
+  rating            Decimal  @db.Decimal(3, 2)
+  created           DateTime @default(now())
+  updated           DateTime
+  created_by        String?  @db.VarChar
+  updated_by        String?  @db.VarChar
+  enabled           Boolean?
 
-  
-  events     Event[]
-  Seasons_Score SeasonScore[]
+  @@unique([user_id, match_rating_id], map: "MatchRatingDetail_userId_matchRatingId_key")
 }
 
-model SeasonScore {
-  id          Int      @id @default(autoincrement())
-  seasonId    Int
-  season      Season  @relation(fields: [seasonId], references: [id])
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  guildId     Int
-  guild       Guild    @relation(fields: [guildId], references: [id])
-  totalPoints Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  position   Int      @default(0)
-  lastPosition Int     @default(0)
+model prediction {
+  prediction_id Int      @id(map: "Prediction_pkey") @default(autoincrement())
+  user_id       Int
+  guild_id      Int
+  event_id      Int
+  question_id   Int
+  accuracy      Int
+  created       DateTime @default(now())
+  updated       DateTime
+  option_id     Int?
+  created_by    String?  @db.VarChar
+  updated_by    String?  @db.VarChar
+  enabled       Boolean?
 
-  @@unique([seasonId, userId], name: "season_user_unique")  
+  @@unique([question_id, user_id], map: "Prediction_questionId_userId_key")
+  @@index([event_id], map: "Prediction_eventId_idx")
+  @@index([guild_id], map: "Prediction_guildId_idx")
 }
 
-model EventRating {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  guildId   Int
-  guild     Guild    @relation(fields: [guildId], references: [id])
-  event     String
-  rating    Decimal  @db.Decimal(3, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  details   EventRatingDetail[]
-  @@unique([guildId, event])
+model question {
+  question_id Int      @id(map: "Question_pkey") @default(autoincrement())
+  event_id    Int
+  question    String
+  answer      String?
+  points      Int
+  created     DateTime @default(now())
+  updated     DateTime
+  message_id  String?
+  channel_id  String?
+  enabled     Boolean?
+  created_by  String?  @db.VarChar
+  updated_by  String?  @db.VarChar
 }
 
-model EventRatingDetail {
-  id        Int      @id @default(autoincrement())
-  rating    Int     
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  guildId   Int
-  guild     Guild    @relation(fields: [guildId], references: [id])
-  event     String
-  createdAt DateTime @default(now())
+model question_option {
+  question_option_id Int       @id(map: "QuestionOption_pkey") @default(autoincrement())
+  question_id        Int
+  index              Int
+  label              String
+  created            DateTime? @db.Timestamptz(6)
+  updated            DateTime? @db.Timestamptz(6)
+  created_by         String?   @db.VarChar
+  updated_by         String?   @db.VarChar
+  enabled            Boolean?
 
-  eventRatingId Int
-  eventRating   EventRating @relation(fields: [eventRatingId], references: [id])
-  
-
-  @@unique([guildId, userId, event], name: "guildId_userId_event")
+  @@unique([question_id, index], map: "QuestionOption_questionId_index_key")
+  @@index([question_id], map: "QuestionOption_questionId_idx")
 }
 
-model MatchRating {
-  id        Int      @id @default(autoincrement())
-  guildId   Int
-  guild     Guild    @relation(fields: [guildId], references: [id])
-  match     String
-  rating    Decimal  @db.Decimal(3, 2) 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  details   MatchRatingDetail[]
-
-  @@unique([guildId, match])
+model season {
+  season_id  Int      @id(map: "Season_pkey") @default(autoincrement())
+  guild_id   Int
+  name       String
+  start_date DateTime @default(now())
+  end_date   DateTime @default(now())
+  active     Boolean  @default(false)
+  created    DateTime @default(now())
+  updated    DateTime
+  created_by String?  @db.VarChar
+  updated_by String?  @db.VarChar
+  enabeld    Boolean?
 }
 
-model MatchRatingDetail {
-  id            Int         @id @default(autoincrement())
-  matchRatingId Int
-  matchRating   MatchRating @relation(fields: [matchRatingId], references: [id])
-  userId        Int
-  user          User        @relation(fields: [userId], references: [id])
-  rating        Decimal     @db.Decimal(3, 2)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+model season_score {
+  season_score_id Int      @id(map: "SeasonScore_pkey") @default(autoincrement())
+  season_id       Int
+  user_id         Int
+  guild_id        Int
+  points          Int
+  created         DateTime @default(now())
+  updated         DateTime
+  last_position   Int      @default(0)
+  position        Int      @default(0)
+  created_by      String?  @db.VarChar
+  updated_by      String?  @db.VarChar
+  enabled         Boolean?
 
-  @@unique([userId, matchRatingId])
+  @@unique([season_id, user_id], map: "SeasonScore_seasonId_userId_key")
 }
 
-model EventWinner {
-  id        Int      @id @default(autoincrement())
-  eventId Int
-  userId    Int
-  guildId   Int
-  user      User     @relation(fields: [userId], references: [id])
-  points   Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  event     Event    @relation(fields: [eventId], references: [id])
-  guild     Guild    @relation(fields: [guildId], references: [id])
-
-  @@unique([eventId, userId])
-  
+model usuario {
+  id         Int       @id(map: "User_pkey") @default(autoincrement())
+  user_id    BigInt    @unique(map: "User_userId_key")
+  username   String
+  url        String?
+  created    DateTime? @default(now())
+  email      String?
+  updated    DateTime?
+  enabled    Boolean?
+  created_by String?   @db.VarChar
+  updated_by String?   @db.VarChar
 }
