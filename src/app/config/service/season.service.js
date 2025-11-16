@@ -1,53 +1,34 @@
-const { closeActiveSeasonAndCreate, upsertGuildByDiscordId, countSeasonsForGuild, listSeasonsForGuildBasic } = require('../data/season.repo');
+const SeasonRepo = require("../repository/season.repo");
+const GuildRepo = require("../repository/guild.repo"); 
 
-async function startNewSeason({ prisma, guildId, guildName, requestedName }) {
-  if (!prisma) throw new Error('Prisma no inicializado');
+class SeasonService {
+  constructor(prisma) {
+    this.prisma = prisma;
+    this.repo = new SeasonRepo(prisma);
+  }
 
-  return prisma.$transaction(async (tx) => {
-    const { closedSeason, newSeason } = await closeActiveSeasonAndCreate({
-      tx,
-      discordGuildIdStr: guildId, 
-      guildName,                  
-      requestedName,
+  async startNewSeason(discordGuildId, guildName, requestedName, createdBy) {
+    return await this.prisma.$transaction(async (tx) => {
+
+      const guild = await GuildRepo.createGuild(tx, discordGuildId, guildName, createdBy);
+      const guildInternalId = guild.id;
+
+      const activeSeason = await this.repo.findActiveSeasonByGuild(guildInternalId);
+      let closedSeason = null;
+      if (activeSeason) {
+        closedSeason = await this.repo.closeSeason(tx, activeSeason, createdBy);
+      }
+
+      const newSeason = await this.repo.createSeason(
+        tx,
+        guildInternalId,
+        requestedName || `Temporada de ${guildName}`,
+        createdBy
+      );
+
+      return { closedSeason, newSeason };
     });
-    return { closedSeason, newSeason };
-  });
+  }
 }
 
-async function getSeasonInfoFirstPage({ prisma, discordGuildIdStr, guildName, perPage }) {
-  return prisma.$transaction(async (tx) => {
-    const guild = await upsertGuildByDiscordId(tx, discordGuildIdStr, guildName);
-
-    const total = await countSeasonsForGuild(tx, guild.id);
-    const totalPages = Math.max(1, Math.ceil(total / perPage));
-    const page = 1;
-
-    const rows = total > 0
-      ? await listSeasonsForGuildBasic(tx, { guildInternalId: guild.id, skip: 0, take: perPage })
-      : [];
-
-    return { rows, total, totalPages, page, perPage, guild };
-  });
-}
-
-async function getSeasonInfoBundle({ prisma, discordGuildIdStr, guildName, perPage, page }) {
-  return prisma.$transaction(async (tx) => {
-    const guild = await upsertGuildByDiscordId(tx, discordGuildIdStr, guildName);
-
-    const total = await countSeasonsForGuild(tx, guild.id);
-    const totalPages = Math.max(1, Math.ceil(total / perPage));
-    const safePage = Math.min(Math.max(page, 1), totalPages);
-
-    const rows = total > 0
-      ? await listSeasonsForGuildBasic(tx, {
-          guildInternalId: guild.id,
-          skip: (safePage - 1) * perPage,
-          take: perPage,
-        })
-      : [];
-
-    return { rows, total, totalPages, page: safePage, perPage, guild };
-  });
-}
-
-module.exports = { startNewSeason, getSeasonInfoFirstPage, getSeasonInfoBundle };
+module.exports = SeasonService;

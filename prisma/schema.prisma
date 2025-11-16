@@ -101,15 +101,17 @@ model event_winner {
   @@unique([event_id, user_id], map: "EventWinner_eventId_userId_key")
 }
 
-model guild {
+model Guild {
   id         Int      @id(map: "Guild_pkey") @default(autoincrement())
   guild_id   BigInt   @unique(map: "Guild_guildId_key")
   name       String
-  created    DateTime @default(now())
-  updated    DateTime
+  created    DateTime? @default(now())
+  updated    DateTime?
   enabled    Boolean?
   created_by String?  @db.VarChar
   updated_by String?  @db.VarChar
+
+  @@map("guild")
 }
 
 model guild_user {
@@ -215,10 +217,10 @@ model season {
   end_date   DateTime @default(now())
   active     Boolean  @default(false)
   created    DateTime @default(now())
-  updated    DateTime
+  updated    DateTime?
   created_by String?  @db.VarChar
   updated_by String?  @db.VarChar
-  enabeld    Boolean?
+  enabled    Boolean? @default(true)
 }
 
 model season_score {
