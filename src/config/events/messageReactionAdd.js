@@ -1,7 +1,7 @@
-const { addEventVote } = require("../domain/eventRating.service");
-const { addMatchVote } = require("../domain/matchRating.service");
+const { addEventVote } = require("../../app/config/service/eventRating.service");
+const { addMatchVote } = require("../../app/config/service/matchRating.service");
 const { prisma } = require("../lib/prisma.js");
-const { ensureGuildAndUser } = require("../data/event.repo.js");
+const { ensureGuildAndUser } = require("../../app/config/repository/event.repo.js");
 
 const emojiToRating = {
   "1️⃣": 1,

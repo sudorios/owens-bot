@@ -1,5 +1,5 @@
 const { upsertGuildByDiscordId } = require("./guild.repo");
-const { upsertUserByDiscordId } = require("./user.repo");
+const { upsertUserByDiscordId } = require("../../security/repository/user.repo");
 const { findActiveSeason } = require("./season.repo");
 
 async function ensureGuildAndUser(
