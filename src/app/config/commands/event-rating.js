@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { ensureGuildAndUser } = require("../data/event.repo.js");
-const { getEventRatingsBundle } = require("../domain/eventRating.service");
-const { buildRatingsEmbed, buildPagingRowRatings, attachEventRatingsPager } = require("../utils/ui/event-ratings");
+const { ensureGuildAndUser } = require("../repository/event.repo.js");
+const { getEventRatingsBundle } = require("../service/eventRating.service");
+const { buildRatingsEmbed, buildPagingRowRatings, attachEventRatingsPager } = require("../../../utils/ui/event-ratings.js");
 
 module.exports = {
   data: new SlashCommandBuilder()

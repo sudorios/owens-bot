@@ -1,88 +1,102 @@
-const { upsertGuildByDiscordId } = require("./guild.repo");
-const { upsertUserByDiscordId } = require("../../security/repository/user.repo");
-const { findActiveSeason } = require("./season.repo");
+class EventRepository {
+  constructor(prisma) {
+    this.prisma = prisma;
+  }
 
-async function ensureGuildAndUser(
-  tx,
-  { guildIdStr, guildName, discordUserId, username }
-) {
-  const guild = await upsertGuildByDiscordId(tx, guildIdStr, guildName);
-  const user = await upsertUserByDiscordId(tx, discordUserId, username);
-  return { guildInternalId: guild.id, userInternalId: user.id };
-}
-
-async function createEvent(
-  tx,
-  { guildInternalId, userInternalId, name, state, seasonId }
-) {
-  const seasonIdToUse =
-    seasonId ?? (await findActiveSeason(tx, guildInternalId));
-  if (!seasonIdToUse) throw new Error("No hay Season activa para este guild.");
-
-  return tx.event.create({
-    data: {
-      guildId: guildInternalId,
-      userId: userInternalId,
-      seasonId: seasonIdToUse,
-      name,
-      state,
-    },
-  });
-}
-
-async function getEvent(tx, eventId) {
-  return tx.event.findUnique({
-    where: { id: Number(eventId) },
-    select: { id: true, name: true },
-  });
-}
-
-async function getSeasonIdByEventId(tx, eventId) {
-  const ev = await tx.event.findUnique({
-    where: { id: eventId },
-    select: { seasonId: true },
-  });
-  return ev?.seasonId || null;
-}
-
-async function upsertEventScore(tx, { userId, guildId, eventId, delta }) {
-  const row = await tx.eventScore.findFirst({
-    where: { userId, guildId, eventId },
-    select: { id: true, points: true },
-  });
-  if (row) {
-    return tx.eventScore.update({
-      where: { id: row.id },
-      data: { points: row.points + delta },
+  async createEvent(tx, { guildInternalId, userInternalId, seasonId, name, createdBy }) {
+    const db = tx || this.prisma;
+    return db.event.create({
+      data: {
+        guild_id: guildInternalId,
+        user_id: userInternalId,
+        season_id: seasonId,
+        name: name,
+        state_code: "ESEV001",
+        enabled: true,
+        created: new Date(),
+        created_by: createdBy,
+      },
     });
   }
-  return tx.eventScore.create({
-    data: { userId, guildId, eventId, points: delta },
-  });
+
+  async getEvent(tx, eventId) {
+    const db = tx || this.prisma;
+    return db.event.findUnique({
+      where: { id: Number(eventId) },
+      select: { id: true, name: true },
+    });
+  }
+
+  async getSeasonIdByEventId(tx, eventId) {
+    const db = tx || this.prisma;
+    const ev = await db.event.findUnique({
+      where: { id: Number(eventId) },
+      select: { season_id: true },
+    });
+
+    return ev?.season_id || null;
+  }
+
+  async upsertEventScore(tx, { userId, guildId, eventId, delta }) {
+    const db = tx || this.prisma;
+    const row = await db.eventScore.findFirst({
+      where: {
+        userId: Number(userId),
+        guildId: Number(guildId),
+        eventId: Number(eventId),
+      },
+      select: { id: true, points: true },
+    });
+
+    if (row) {
+      return db.eventScore.update({
+        where: { id: row.id },
+        data: { points: row.points + delta },
+      });
+    }
+
+    return db.eventScore.create({
+      data: {
+        userId: Number(userId),
+        guildId: Number(guildId),
+        eventId: Number(eventId),
+        points: delta,
+      },
+    });
+  }
+
+  async countEventsForSeason(tx, { seasonId, guildInternalId }) {
+    const db = tx || this.prisma;
+    return db.event.count({
+      where: {
+        season_id: Number(seasonId),
+        guild_id: Number(guildInternalId),
+      },
+    });
+  }
+
+  async listEventsForSeason(tx, { seasonId, guildInternalId, skip = 0, take = 10 }) {
+    const db = tx || this.prisma;
+    const rows = await db.event.findMany({
+      where: {
+        season_id: Number(seasonId),
+        guild_id: Number(guildInternalId),
+      },
+      select: {
+        event_id: true,
+        name: true,
+        state_code: true,
+        created: true,
+      },
+      orderBy: { created: "desc" },
+      skip,
+      take,
+    });
+    return rows.map((r) => ({
+      ...r,
+      id: r.event_id,
+    }));
+  }
 }
 
-async function countEventsForSeason(tx, { seasonId, guildInternalId }) {
-  return tx.event.count({
-    where: { seasonId: Number(seasonId), guildId: Number(guildInternalId) },
-  });
-}
-
-async function listEventsForSeason(tx, { seasonId, guildInternalId, skip = 0, take = 10 }) {
-  return tx.event.findMany({
-    where: { seasonId: Number(seasonId), guildId: Number(guildInternalId) },
-    select: { id: true, name: true },
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take,
-  });
-}
-
-module.exports = {
-  ensureGuildAndUser,
-  getEvent,
-  createEvent,
-  getSeasonIdByEventId,
-  upsertEventScore,
-  countEventsForSeason,
-  listEventsForSeason
-};
+module.exports = EventRepository;

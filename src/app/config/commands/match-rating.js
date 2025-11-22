@@ -1,11 +1,11 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { ensureGuildAndUser } = require("../data/event.repo.js");
-const { getMatchRatingsBundle } = require("../domain/matchRating.service.js");
+const { ensureGuildAndUser } = require("../repository/event.repo.js");
+const { getMatchRatingsBundle } = require("../service/matchRating.service.js");
 const {
   buildRatingsEmbed,
   buildPagingRowRatings,
   attachMatchRatingsPager,
-} = require("../utils/ui/match-ratings");
+} = require("../../../utils/ui/match-ratings.js");
 
 module.exports = {
   data: new SlashCommandBuilder()

@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -31,7 +32,7 @@ model event {
   name       String
   state_code String   @db.VarChar
   created    DateTime @default(now())
-  updated    DateTime
+  updated    DateTime?
   season_id  Int?
   enabled    Boolean?
   created_by String?  @db.VarChar
@@ -115,14 +116,14 @@ model Guild {
 }
 
 model guild_user {
-  guild_user__id Int      @id(map: "GuildUser_pkey") @default(autoincrement())
+  guild_user_id Int      @id(map: "GuildUser_pkey") @default(autoincrement())
   guild_id       Int
   user_id        Int
   points         Int      @default(0)
   last_position  Int      @default(0)
   position       Int      @default(0)
   created        DateTime @default(now())
-  updated        DateTime
+  updated        DateTime?
   enabled        Boolean?
   created_by     String?  @db.VarChar
   updated_by     String?  @db.VarChar
@@ -251,4 +252,18 @@ model usuario {
   enabled    Boolean?
   created_by String?   @db.VarChar
   updated_by String?   @db.VarChar
+}
+
+view vw_guild_user {
+  guild_user_id BigInt 
+  guild_id      Int
+  user_id       Int
+  points        Int
+  position      Int
+  last_position Int
+  username      String
+  user_dc_id    BigInt 
+  guild         String 
+  guild_dc_id   BigInt 
+  @@map("vw_guild_user") 
 }

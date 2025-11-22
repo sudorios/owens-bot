@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const SeasonFacade = require('../../facade/season.facade');
+const SeasonFacade = require('../facade/season.facade');
 
 module.exports = {
   data: new SlashCommandBuilder()

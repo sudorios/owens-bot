@@ -1,5 +1,5 @@
-const { upsertGuildByDiscordId, findActiveSeason } = require('../data/season.repo');
-const { countSeasonRanking, getSeasonRankingPage, updateSeasonPositions } = require('../data/seasonScore.repo');
+//const { upsertGuildByDiscordId, findActiveSeason } = require('../repository/season.repo');
+const { countSeasonRanking, getSeasonRankingPage, updateSeasonPositions } = require('../repository/seasonScore.repo');
 
 const MEDALS = ['🥇','🥈','🥉'];
 

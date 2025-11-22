@@ -1,5 +1,5 @@
-const { getEvent } = require('../data/event.repo');
-const { countEventRanking, getEventRankingPage } = require('../data/eventScore.repo');
+const { getEvent } = require('../repository/event.repo');
+const { countEventRanking, getEventRankingPage } = require('../repository/eventScore.repo');
 
 const MEDALS = ['🥇','🥈','🥉'];
 

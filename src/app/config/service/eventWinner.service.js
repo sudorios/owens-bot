@@ -1,4 +1,4 @@
-const { countEventWinners, getEventWinnersPage } = require('../data/eventWinner.repo');
+const { countEventWinners, getEventWinnersPage } = require('../repository/eventWinner.repo');
 
 function mention(discordId, fallback) {
   return discordId != null ? `<@${discordId.toString()}>` : fallback;

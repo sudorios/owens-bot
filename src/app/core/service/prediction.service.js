@@ -1,6 +1,6 @@
-const { upsertGuildByDiscordId } = require('../data/guild.repo');
-const { upsertUserByDiscordId } = require('../data/user.repo');
-const { findQuestionByMessageId } = require('../data/question.repo');
+//const { upsertGuildByDiscordId } = require('../repository/guild.repo');
+//const { upsertUserByDiscordId } = require('../repository/user.repo');
+//const { findQuestionByMessageId } = require('../repository/question.repo');
 
 async function ingestPollVotes({ prisma, guild, message }) {
   if (!message.poll) return { saved: 0, questionId: null, eventId: null, pollAnswers: [] };

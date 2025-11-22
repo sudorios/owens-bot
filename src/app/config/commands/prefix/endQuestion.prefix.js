@@ -1,6 +1,6 @@
-const { ingestPollVotes } = require('../../domain/prediction.service');
-const { closeAndScoreQuestion } = require('../../domain/question.service');
-const { findQuestionByMessageId } = require('../../data/question.repo'); 
+const { ingestPollVotes } = require('../../../core/service/prediction.service');
+const { closeAndScoreQuestion } = require('../../service/question.service');
+const { findQuestionByMessageId } = require('../../repository/question.repo'); 
 
 module.exports = {
   data: { name: 'endquestion', type: 'prefix' },

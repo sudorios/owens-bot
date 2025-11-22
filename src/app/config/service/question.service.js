@@ -5,17 +5,11 @@ const {
   attachMessageMeta,
   getOptionIdByIndex,
   closeQuestionWithAnswer,
-} = require("../data/question.repo.js");
+} = require("../repository/question.repo.js");
 
-const {
-  ensureGuildAndUser,
-  upsertEventScore,
-  getSeasonIdByEventId,
-} = require("../data/event.repo.js");
-
-const { upsertSeasonScore } = require("../data/seasonScore.repo.js");
-const { upsertGuildUserPoints } = require("../data/guildUser.repo.js");
-const { updateAccuracy } = require("../data/prediction.repo.js");
+const { upsertSeasonScore } = require("../../core/repository/seasonScore.repo.js");
+//const { upsertGuildUserPoints } = require("../../core/repository/guildUser.repo.js");
+const { updateAccuracy } = require("../../core/repository/prediction.repo.js");
 
 function sanitizeOptions(raw) {
   if (!raw) return ["Yes", "No"];

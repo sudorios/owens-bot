@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getEventRankingFirstPage } = require('../domain/eventScore.service');
-const { buildRankingEmbed, buildPagingRowRank, attachEventRankingPager } = require('../utils/ui/event_score');
+const { getEventRankingFirstPage } = require('../service/eventScore.service');
+const { buildRankingEmbed, buildPagingRowRank, attachEventRankingPager } = require('../../../utils/ui/event_score');
 
 const PER_PAGE = 10;
 const COLLECTOR_MS = 60_000;

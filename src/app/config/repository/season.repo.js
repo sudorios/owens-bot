@@ -22,18 +22,16 @@ class SeasonRepo {
       },
     });
   }
-
-  async createSeason(tx, guildInternalId, name, createdBy) {
+  
+  async createSeason(tx, guildInternalId, seasonName, createdBy) {
     return tx.season.create({
       data: {
         guild_id: guildInternalId,
-        name,
+        name: seasonName,
         start_date: new Date(),
-        end_date: new Date(),
         active: true,
-        enabled: true,
         created: new Date(),
-        created_by: createdBy || process.env.USER,
+        created_by: createdBy || "system",
       },
     });
   }

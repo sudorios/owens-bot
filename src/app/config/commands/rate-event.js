@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { prisma } = require("../lib/prisma.js");
-const { ensureGuildAndUser } = require("../data/event.repo.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
