@@ -1,69 +1,102 @@
-//const { upsertGuildByDiscordId } = require('../repository/guild.repo');
-//const { upsertUserByDiscordId } = require('../repository/user.repo');
-//const { findQuestionByMessageId } = require('../repository/question.repo');
+const PredictionRepository = require("../repository/prediction.repo");
+const QuestionRepository = require("../../config/repository/question.repo");
+const GuildUserRepository = require("../repository/guildUser.repo");
 
-async function ingestPollVotes({ prisma, guild, message }) {
-  if (!message.poll) return { saved: 0, questionId: null, eventId: null, pollAnswers: [] };
-
-  const pollAnswers = Array.from(message.poll.answers.values());
-  const votes = [];
-  for (let i = 0; i < pollAnswers.length; i++) {
-    const voters = await pollAnswers[i].fetchVoters().catch(() => null);
-    if (!voters) continue;
-    for (const voter of voters.values()) {
-      if (voter.bot) continue; 
-      votes.push({
-        index: i,
-        label: (pollAnswers[i]?.text || '').trim(),
-        userIdStr: voter.id,
-        username: voter.username ?? voter.tag ?? voter.id,
-      });
-    }
+class PredictionService {
+  constructor(prisma) {
+    this.prisma = prisma;
+    this.repo = new PredictionRepository(prisma);
+    this.questionRepo = new QuestionRepository(prisma);
+    this.guildUserRepo = new GuildUserRepository(prisma);
   }
 
-  return prisma.$transaction(async (tx) => {
-    const q = await findQuestionByMessageId(tx, { messageId: message.id });
-    if (!q) throw new Error('Question no encontrada por messageId');
+  async ingestPollVotes({ guild, message }) {
+    if (!message.poll) return { saved: 0, questionId: null, pollAnswers: [] };
 
-    if (q.answer) {
-      return { saved: 0, questionId: q.id, eventId: q.eventId, pollAnswers, alreadyClosed: true };
-    }
+    const pollAnswers = Array.from(message.poll.answers.values());
+    const votes = [];
 
-    const g = await upsertGuildByDiscordId(tx, guild.id, guild.name);
+    console.log(`🔍 [Ingest] Procesando Poll con ${pollAnswers.length} opciones...`);
 
-    let saved = 0, resolvedByLabel = 0, resolvedByIndex = 0;
-    for (const v of votes) {
-      const u = await upsertUserByDiscordId(tx, v.userIdStr, v.username);
-
-      let opt = null;
-      if (v.label) {
-        opt = await tx.questionOption.findFirst({
-          where: { questionId: q.id, label: { equals: v.label, mode: 'insensitive' } },
-          select: { id: true },
-        });
-        if (opt?.id) resolvedByLabel++;
-      }
-
-      if (!opt?.id) {
-        opt = await tx.questionOption.findUnique({
-          where: { questionId_index: { questionId: q.id, index: v.index } },
-          select: { id: true },
-        });
-        if (opt?.id) resolvedByIndex++;
-      }
-
-      if (!opt?.id) continue;
-
-      await tx.prediction.upsert({
-        where: { questionId_userId: { questionId: q.id, userId: u.id } },
-        update: { optionId: opt.id, eventId: q.eventId, guildId: g.id },
-        create: { userId: u.id, guildId: g.id, eventId: q.eventId, questionId: q.id, optionId: opt.id, accuracy: 0 },
+    for (let i = 0; i < pollAnswers.length; i++) {
+      const ans = pollAnswers[i];
+      const voters = await ans.fetchVoters().catch((e) => {
+        console.error("Error fetching voters:", e);
+        return null;
       });
-      saved++;
+
+      if (!voters) continue;
+
+      for (const voter of voters.values()) {
+        if (voter.bot) continue;
+        votes.push({
+          index: i,
+          label: (ans.text || "").trim(),
+          userIdStr: voter.id,
+          username: voter.username ?? voter.tag ?? voter.id,
+        });
+      }
     }
 
-    return { saved, questionId: q.id, eventId: q.eventId, pollAnswers, resolvedByLabel, resolvedByIndex };
-  });
+    console.log(`🔍 [Ingest] Encontré ${votes.length} votos válidos (no bots) en Discord.`);
+    if (votes.length === 0) return { saved: 0, questionId: null };
+
+    return this.prisma.$transaction(async (tx) => {
+      const q = await this.questionRepo.findQuestionByMessageId(tx, message.id);
+
+      if (!q) {
+        console.error("❌ [Ingest] No encontré la pregunta en BD con messageId:", message.id);
+        throw new Error("Question no encontrada por messageId");
+      }
+      if (q.answer) {
+        return { saved: 0, questionId: q.question_id, alreadyClosed: true };
+      }
+
+      const dbOptions = q.question_options || q.question_option || [];
+
+      if (dbOptions.length === 0) {
+        console.warn(
+          "⚠️ [Ingest] ALERTA: La pregunta existe pero `dbOptions` está vacío. Verifica si el include en el Repo usa 'question_options' (plural)."
+        );
+      }
+
+      let saved = 0;
+
+      for (const v of votes) {
+        const { userInternalId, guildInternalId } = await this.guildUserRepo.createGuildUser(tx, {
+          guildIdStr: guild.id,
+          guildName: guild.name,
+          discordUserId: v.userIdStr,
+          username: v.username,
+        });
+
+        let opt = dbOptions.find((o) => o.label.toLowerCase() === v.label.toLowerCase());
+
+        if (!opt) {
+          opt = dbOptions.find((o) => o.index === v.index);
+        }
+
+        if (opt) {
+          await this.repo.upsertPrediction(tx, {
+            questionId: q.question_id,
+            eventId: q.event_id,
+            guildId: guildInternalId,
+            userId: userInternalId,
+            optionId: opt.question_option_id,
+          });
+          saved++;
+        } else {
+          console.warn(
+            `⚠️ [Ingest] No encontré match para voto: "${v.label}" (Index ${v.index}). Opciones disponibles:`,
+            dbOptions.map((o) => `${o.label}(${o.index})`)
+          );
+        }
+      }
+
+      console.log(`✅ [Ingest] Guardadas ${saved} predicciones en la BD.`);
+      return { saved, questionId: q.question_id, eventId: q.event_id };
+    });
+  }
 }
 
-module.exports = { ingestPollVotes };
+module.exports = PredictionService;

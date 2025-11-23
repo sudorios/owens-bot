@@ -1,97 +1,110 @@
+class QuestionRepository {
+  constructor(prisma) {
+    this.prisma = prisma;
+  }
 
-function nowPlusHours(hours) {
-  const h = Number(hours);
-  if (!Number.isFinite(h) || h <= 0) return null;
-  const d = new Date();
-  d.setHours(d.getHours() + h);
-  return d;
-}
+  _getQuestionTable(db) {
+    return db.question || db.Question;
+  }
+  
+  _getOptionTable(db) {
+    return db.question_option || db.QuestionOption || db.questionOption;
+  }
 
-async function getEventById(tx, eventId) {
-  return tx.event.findUnique({ where: { id: Number(eventId) } });
-}
-
-async function findOpenDuplicateQuestion(tx, { eventId, text }) {
-  return tx.question.findFirst({
-    where: { eventId: Number(eventId), question: text.trim(), answer: null },
-    select: { id: true },
-  });
-}
-
-async function createQuestionWithOptions(tx, {
-  eventId,
-  text,
-  points,
-  options,
-  pollDurationHours,
-}) {
-  const pollEndsAt = pollDurationHours ? nowPlusHours(pollDurationHours) : null;
-  const safePoints = Math.max(1, Number(points) || 1); 
-
-  const question = await tx.question.create({
-    data: {
-      eventId: Number(eventId),
-      question: text.trim(),
-      points: safePoints, 
-      pollDurationHours: pollDurationHours ?? null,
-      pollEndsAt,
-    },
-    select: { id: true, eventId: true, question: true, points: true, pollDurationHours: true, pollEndsAt: true }
-  });
-
-  for (let i = 0; i < options.length; i++) {
-    const label = options[i];
-    await tx.questionOption.create({
-      data: { questionId: question.id, index: i, label },
+  async findOpenDuplicateQuestion(tx, { eventId, text }) {
+    const db = tx || this.prisma;
+    return this._getQuestionTable(db).findFirst({
+      where: { 
+          event_id: Number(eventId), 
+          question: text.trim(),     
+          answer: null               
+      },
+      select: { question_id: true }, 
     });
   }
 
-  return question;
+  async createQuestion(tx, { eventId, text, points, pollDurationHours, pollEndsAt, createdBy }) {
+    const db = tx || this.prisma;
+    const safePoints = Math.max(1, Number(points) || 1);
+
+    return this._getQuestionTable(db).create({
+      data: {
+        event_id: Number(eventId),
+        question: text.trim(),
+        points: safePoints,
+        created: new Date(),
+        created_by: createdBy,                
+        updated: new Date(), 
+      },
+    });
+  }
+
+  async createOptions(tx, questionId, options, createdBy) {
+    const db = tx || this.prisma;
+    const optTable = this._getOptionTable(db);
+    
+    const data = options.map((label, index) => ({
+       question_id: Number(questionId),
+       index: index,
+       label: label,
+       created: new Date(),
+       created_by: createdBy,
+       enabled: true
+    }));
+
+    if (optTable.createMany) {
+        await optTable.createMany({ data });
+    } else {
+        for (const d of data) await optTable.create({ data: d });
+    }
+  }
+
+  async attachMessageMeta(tx, { questionId, messageId, channelId }) {
+    const db = tx || this.prisma;
+    return this._getQuestionTable(db).update({
+      where: { question_id: Number(questionId) },
+      data: {
+        message_id: String(messageId),
+        channel_id: channelId ? String(channelId) : null,
+      },
+    });
+  }
+
+  async findQuestionByMessageId(tx, messageId) {
+    const db = tx || this.prisma;
+    return this._getQuestionTable(db).findFirst({
+      where: { message_id: String(messageId) },
+      include: {
+        question_options: { 
+          orderBy: { index: 'asc' } 
+        }
+      }
+    });
+  }
+
+  async getOptionIdByIndex(tx, { questionId, index }) {
+    const db = tx || this.prisma;
+    const optTable = this._getOptionTable(db);
+    
+    return optTable.findFirst({
+      where: { 
+        question_id: Number(questionId), 
+        index: Number(index) 
+      },
+      select: { question_option_id: true, label: true } 
+    });
+  }
+
+  async closeQuestion(tx, { questionId, answerLabel }) {
+    const db = tx || this.prisma;
+    return this._getQuestionTable(db).update({
+      where: { question_id: Number(questionId) },
+      data: { 
+        answer: answerLabel, 
+        updated: new Date() 
+      }
+    });
+  }
 }
 
-async function attachMessageMeta(tx, { questionId, messageId, channelId }) {
-  return tx.question.update({
-    where: { id: Number(questionId) },
-    data: {
-      messageId: String(messageId),
-      channelId: channelId ? String(channelId) : null,
-    },
-    select: { id: true, messageId: true, channelId: true },
-  });
-}
-
-async function findQuestionByMessageId(tx, { messageId }) {
-  return tx.question.findFirst({
-    where: { messageId: String(messageId) },
-    include: { event: true, options: true, predictions: true },
-  });
-}
-
-async function getOptionIdByIndex(tx, { questionId, index }) {
-  const opt = await tx.questionOption.findUnique({
-    where: { questionId_index: { questionId, index } },
-    select: { id: true },
-  });
-  return opt?.id || null;
-}
-
-async function findWinningPredictions(tx, { questionId, optionId }) {
-  return tx.prediction.findMany({
-    where: { questionId, optionId },
-    select: { id: true, userId: true, guildId: true, eventId: true },
-  });
-}
-async function closeQuestionWithAnswer(tx, { questionId, answer }) {
-  return tx.question.update({ where: { id: questionId }, data: { answer } });
-}
-
-module.exports = {
-  getEventById,
-  findOpenDuplicateQuestion,
-  createQuestionWithOptions,
-  attachMessageMeta,
-  findQuestionByMessageId,
-  getOptionIdByIndex,
-  findWinningPredictions,
-  closeQuestionWithAnswer,
-};
+module.exports = QuestionRepository;

@@ -81,7 +81,7 @@ model event_score {
   event_id       Int
   points         Int
   created        DateTime @default(now())
-  updated        DateTime
+  updated        DateTime?
   created_by     String?  @db.VarChar
   updated_by     String?  @db.VarChar
   enabled        Boolean?
@@ -169,7 +169,7 @@ model prediction {
   question_id   Int
   accuracy      Int
   created       DateTime @default(now())
-  updated       DateTime
+  updated       DateTime?
   option_id     Int?
   created_by    String?  @db.VarChar
   updated_by    String?  @db.VarChar
@@ -193,6 +193,8 @@ model question {
   enabled     Boolean?
   created_by  String?  @db.VarChar
   updated_by  String?  @db.VarChar
+
+  question_options question_option[]
 }
 
 model question_option {
@@ -206,6 +208,7 @@ model question_option {
   updated_by         String?   @db.VarChar
   enabled            Boolean?
 
+  question           question @relation(fields: [question_id], references: [question_id])
   @@unique([question_id, index], map: "QuestionOption_questionId_index_key")
   @@index([question_id], map: "QuestionOption_questionId_idx")
 }
@@ -231,7 +234,7 @@ model season_score {
   guild_id        Int
   points          Int
   created         DateTime @default(now())
-  updated         DateTime
+  updated         DateTime?
   last_position   Int      @default(0)
   position        Int      @default(0)
   created_by      String?  @db.VarChar
@@ -266,4 +269,24 @@ view vw_guild_user {
   guild         String 
   guild_dc_id   BigInt 
   @@map("vw_guild_user") 
+}
+
+view vw_season_score {
+  season_score_id Int    
+  points          Int
+  position        Int
+  last_position   Int
+  season_id       Int
+  user_id         Int
+  guild_id        Int
+  season          String   
+  start_date      DateTime
+  end_date        DateTime?
+  active          Boolean
+  username        String
+  user_dc_id      BigInt  
+  guild           String   
+  guild_dc_id     BigInt   
+
+  @@map("vw_season_score")
 }

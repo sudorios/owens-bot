@@ -1,32 +1,38 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { getSeasonRankingFirstPage } = require('../service/seasonScore.service');
-const { buildSeasonRankingEmbed, buildPagingRowSeasonRank, attachSeasonRankingPager } = require('../../../utils/ui/season_score');
+const { SlashCommandBuilder } = require("discord.js");
+const SeasonRankingFacade = require("../facade/seasonRanking.facade");
+const {
+  buildSeasonRankingEmbed,
+  buildPagingRowSeasonRank,
+  attachSeasonRankingPager,
+} = require("../../../utils/ui/season_score");
 
 const PER_PAGE = 10;
 const COLLECTOR_MS = 60_000;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('season-ranking')
-    .setDescription('Muestra el ranking de la season activa en este servidor.')
-    .setDMPermission(false),
+    .setName("season-ranking")
+    .setDescription("Muestra el ranking de la season activa en este servidor."),
 
   async execute(interaction, ctx) {
-    await interaction.deferReply(); 
+    if (!ctx?.prisma) return interaction.reply("❌ Error DB.");
+    await interaction.deferReply();
 
     const guildId = interaction.guildId;
-    const guildName = interaction.guild?.name || 'Unknown';
+    const guildName = interaction.guild?.name || "Unknown";
     const perPage = PER_PAGE;
 
-    const bundle = await getSeasonRankingFirstPage({
-      prisma: ctx.prisma,
-      discordGuildIdStr: guildId,
+    const facade = new SeasonRankingFacade(ctx.prisma);
+
+    const bundle = await facade.getRankingPage({
+      guildIdStr: guildId,
       guildName,
+      page: 1,
       perPage,
     });
 
     if (!bundle.season) {
-      return interaction.editReply({ content: 'ℹ️ No hay una season activa en este servidor.' });
+      return interaction.editReply({ content: "ℹ️ No hay una season activa en este servidor." });
     }
 
     const embed = buildSeasonRankingEmbed({

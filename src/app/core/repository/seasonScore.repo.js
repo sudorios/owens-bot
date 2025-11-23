@@ -1,80 +1,142 @@
+class SeasonScoreRepository {
+  constructor(prisma) {
+    this.prisma = prisma;
+  }
 
-async function countSeasonRanking(tx, { seasonId, guildInternalId }) {
-  return tx.seasonScore.count({
-    where: { seasonId: Number(seasonId), guildId: Number(guildInternalId) },
-  });
-}
+  _getView(db) {
+    if (db.vwSeasonScore) return db.vwSeasonScore;
+    if (db.vw_season_score) return db.vw_season_score;
+    throw new Error("❌ Vista vw_season_score no encontrada. Ejecuta 'npx prisma generate'.");
+  }
 
-async function getSeasonRankingPage(tx, { seasonId, guildInternalId, perPage = 10, page = 1 }) {
-  const take = Math.min(Math.max(perPage, 1), 50);
-  const skip = Math.max(page - 1, 0) * take;
+  _getTable(db) {
+    if (db.seasonScore) return db.seasonScore;
+    if (db.season_score) return db.season_score;
+    if (db.SeasonScore) return db.SeasonScore;
+    throw new Error("❌ Tabla season_score no encontrada.");
+  }
 
-  const rows = await tx.seasonScore.findMany({
-    where: { seasonId: Number(seasonId), guildId: Number(guildInternalId) },
-    select: { userId: true, guildId: true, seasonId: true, totalPoints: true, position: true, lastPosition: true, user: { select: { username: true, userId: true } } },
-    orderBy: [{ totalPoints: 'desc' }, { userId: 'asc' }], 
-    take, skip,
-  });
+  async countSeasonRanking(tx, { seasonId, guildInternalId }) {
+    const db = tx || this.prisma;
+    const view = this._getView(db);
 
-  return rows.map(r => ({
-    userId: r.userId,
-    guildId: r.guildId,
-    seasonId: r.seasonId,
-    points: r.totalPoints,
-    position: r.position,
-    lastPosition: r.lastPosition,
-    username: r.user?.username ?? `User#${r.userId}`,
-    discordId: r.user?.userId ?? null, 
-  }));
-}
+    return view.count({
+      where: {
+        season_id: Number(seasonId),
+        guild_id: Number(guildInternalId),
+        points: { gt: 0 },
+      },
+    });
+  }
 
-async function updateSeasonPositions(tx, { seasonId, guildInternalId }) {
-  const sid = Number(seasonId);
-  const gid = Number(guildInternalId);
-  if (!Number.isInteger(sid)) throw new Error('seasonId inválido');
-  if (!Number.isInteger(gid)) throw new Error('guildInternalId inválido');
+  async getSeasonRankingPage(tx, { seasonId, guildInternalId, perPage = 10, page = 1 }) {
+    const db = tx || this.prisma;
+    const view = this._getView(db);
+    const take = Math.min(Math.max(perPage, 1), 50);
+    const skip = Math.max(page - 1, 0) * take;
 
-  const all = await tx.seasonScore.findMany({
-    where: { seasonId: sid, guildId: gid },
-    select: { id: true, totalPoints: true, position: true },
-    orderBy: [{ totalPoints: 'desc' }, { id: 'asc' }],
-  });
+    const rows = await view.findMany({
+      where: {
+        season_id: Number(seasonId),
+        guild_id: Number(guildInternalId),
+        points: { gt: 0 },
+      },
+      orderBy: [{ points: "desc" }],
+      take,
+      skip,
+    });
 
-  let updates = 0;
-  let rank = 0;
-  let prevPoints = null;
+    return rows.map((r) => ({
+      userId: r.user_id,
+      guildId: r.guild_id,
+      seasonId: r.season_id,
+      points: r.points,
+      position: r.position,
+      lastPosition: r.last_position,
+      username: r.username || `User#${r.user_id}`,
+      discordId: r.user_dc_id,
+    }));
+  }
 
-  for (let i = 0; i < all.length; i++) {
-    const row = all[i];
-    if (prevPoints === null || row.totalPoints !== prevPoints) {
-      rank += 1; 
-      prevPoints = row.totalPoints;
+  async updateSeasonPositions(tx, { seasonId, guildInternalId }) {
+    const db = tx || this.prisma;
+    const table = this._getTable(db);
+    const sid = Number(seasonId);
+    const gid = Number(guildInternalId);
+
+    const all = await table.findMany({
+      where: { season_id: sid, guild_id: gid, points: { gt: 0 } },
+      select: {
+        season_score_id: true,
+        points: true,
+        position: true,
+      },
+      orderBy: [{ points: "desc" }, { season_score_id: "asc" }],
+    });
+
+    let updates = 0;
+    let rank = 0;
+    let prevPoints = null;
+
+    for (let i = 0; i < all.length; i++) {
+      const row = all[i];
+      if (prevPoints === null || row.points !== prevPoints) {
+        rank = i + 1;
+        prevPoints = row.points;
+      }
+
+      if (row.position !== rank) {
+        await table.update({
+          where: {
+            season_score_id: row.season_score_id,
+          },
+          data: {
+            last_position: row.position,
+            position: rank,
+          },
+        });
+        updates++;
+      }
     }
-    if (row.position !== rank) {
-      await tx.seasonScore.update({
-        where: { id: row.id },
-        data: { lastPosition: row.position, position: rank },
+    return { updates, total: all.length };
+  }
+
+  async upsertSeasonScore(tx, { userId, guildId, seasonId, delta }) {
+    const db = tx || this.prisma;
+    const table = this._getTable(db);
+
+    const row = await table.findFirst({
+      where: {
+        user_id: Number(userId),
+        guild_id: Number(guildId),
+        season_id: Number(seasonId),
+      },
+      select: {
+        season_score_id: true,
+        points: true,
+      },
+    });
+
+    if (row) {
+      return table.update({
+        where: { season_score_id: row.season_score_id },
+        data: { points: row.points + delta },
       });
-      updates++;
     }
+
+    return table.create({
+      data: {
+        user_id: Number(userId),
+        guild_id: Number(guildId),
+        season_id: Number(seasonId),
+        points: delta,
+        enabled: true,
+        created: new Date(),
+        position: 0,
+        last_position: 0,
+      },
+    });
   }
-  return { updates, total: all.length };
 }
 
-async function upsertSeasonScore(tx, { userId, guildId, seasonId, delta }) {
-  const row = await tx.seasonScore.findFirst({
-    where: { userId, guildId, seasonId },
-    select: { id: true, totalPoints: true },
-  });
-  if (row) {
-    return tx.seasonScore.update({ where: { id: row.id }, data: { totalPoints: row.totalPoints + delta } });
-  }
-  return tx.seasonScore.create({ data: { userId, guildId, seasonId, totalPoints: delta } });
-}
-
-module.exports = {
-  countSeasonRanking,
-  getSeasonRankingPage,
-  updateSeasonPositions,
-  upsertSeasonScore
-};
+module.exports = SeasonScoreRepository;
