@@ -1,43 +1,23 @@
 const { EmbedBuilder } = require("discord.js");
-const { getMatchRatingsBundle } = require("../../domain/matchRating.service");
-const {
-  makeCollector,
-  parseCid,
-  clamp,
-  buildPagingRowGeneric,
-} = require("./shared");
+const MatchRatingFacade = require("../../app/config/facade/matchRating.facade");
+const { makeCollector, parseCid, clamp, buildPagingRowGeneric } = require("./shared");
 
-const PREFIX = "marate";
+const PREFIX = "mrate";
 
 function buildRatingsEmbed({ description, page, totalPages, total }) {
   return new EmbedBuilder()
-    .setTitle("⭐ Luchas calificadas")
+    .setTitle("🤼 Luchas Rateadas")
     .setDescription(description)
-    .setFooter({
-      text: `Página ${page}/${totalPages} • Total luchas: ${total}`,
-    })
-    .setColor(0x3498db)
+    .setFooter({ text: `Página ${page}/${totalPages} • Total luchas: ${total}` })
+    .setColor(0xe74c3c) // Rojo
     .setTimestamp(new Date());
 }
 
 function buildPagingRowRatings({ perPage, page, totalPages }) {
-  return buildPagingRowGeneric(
-    PREFIX,
-    ["prev", page, perPage],
-    ["next", page, perPage],
-    page <= 1,
-    page >= totalPages
-  );
+  return buildPagingRowGeneric(PREFIX, ["prev", page, perPage], ["next", page, perPage], page <= 1, page >= totalPages);
 }
 
-function attachMatchRatingsPager({
-  message,
-  interaction,
-  ctx,
-  meta,
-  guildId,
-  ttlMs = 60_000,
-}) {
+function attachMatchRatingsPager({ message, interaction, ctx, meta, guildIdStr, ttlMs = 60000 }) {
   return makeCollector({
     message,
     interaction,
@@ -51,16 +31,16 @@ function attachMatchRatingsPager({
       const per = Number(perStr);
       const cur = Number(pageStr);
 
-      const nextPage = clamp(
-        dir === "prev" ? cur - 1 : cur + 1,
-        1,
-        meta.totalPages
-      );
+      const nextPage = clamp(dir === "prev" ? cur - 1 : cur + 1, 1, meta.totalPages);
 
       try {
-        const bundle = await getMatchRatingsBundle({
-          prisma: ctx.prisma,
-          guildId,
+        const facade = new MatchRatingFacade(ctx.prisma);
+
+        const bundle = await facade.getRatingsBundle({
+          guildIdStr: guildIdStr,
+          guildName: interaction.guild.name,
+          discordUserId: i.user.id,
+          username: i.user.username,
           perPage: per,
           page: nextPage,
         });
@@ -83,7 +63,7 @@ function attachMatchRatingsPager({
           components: bundle.totalPages > 1 ? [newRow] : [],
         });
       } catch (error) {
-        console.error("Error updating event ratings:", error);
+        console.error("Error updating match ratings:", error);
         await i.deferUpdate().catch(() => {});
       }
     },

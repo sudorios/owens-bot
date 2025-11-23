@@ -1,30 +1,42 @@
-async function countEventWinners(tx, { guildInternalId }) {
-  return tx.eventWinner.count({
-    where: { guildId: Number(guildInternalId) },
-  });
+class EventWinnerRepository {
+
+  constructor(prisma) {
+    this.prisma = prisma;
+  }
+
+  _getView(db) {
+    if (db.vwEventWinners) return db.vwEventWinners;
+    if (db.vw_event_winners) return db.vw_event_winners;
+    throw new Error("❌ Vista vw_event_winners no encontrada. Ejecuta 'npx prisma generate'.");
+  }
+
+  async countEventWinners(tx, { guildInternalId }) {
+    const db = tx || this.prisma;
+    const view = this._getView(db);
+
+    return view.count({
+      where: { guild_id: Number(guildInternalId) },
+    });
+  }
+
+  async getEventWinnersPage(tx, { guildInternalId, skip, take }) {
+    const db = tx || this.prisma;
+    const view = this._getView(db);
+
+    const rows = await view.findMany({
+      where: { guild_id: Number(guildInternalId) },
+      orderBy: [{ points: "desc" }, { event_winner_id: "asc" }],
+      skip,
+      take,
+    });
+
+    return rows.map((r) => ({
+      username: r.username,
+      discordId: r.user_dc_id,
+      points: r.points,
+      eventName: r.event_name,
+    }));
+  }
 }
 
-async function getEventWinnersPage(tx, { guildInternalId, perPage, page }) {
-  const take = Math.min(Math.max(perPage, 1), 50);
-  const skip = Math.max(page - 1, 0) * take;
-
-  return tx.eventWinner.findMany({
-    where: { guildId: Number(guildInternalId) },
-    select: {
-      points: true,
-      event: { select: { name: true } },
-      user: { select: { username: true, userId: true } },
-    },
-    orderBy: [{ points: 'desc' }, { id: 'asc' }],
-    take,
-    skip,
-  }).then(rows => rows.map(r => ({
-    username: r.user?.username ?? `User#${r.userId}`,
-    discordId: r.user?.userId ?? null,
-    points: r.points,
-    eventName: r.event?.name ?? 'Evento desconocido',
-  })));
-}
-
-
-module.exports = { countEventWinners, getEventWinnersPage };
+module.exports = EventWinnerRepository;

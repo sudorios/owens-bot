@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getEventRankingFirstPage } = require('../service/eventScore.service');
+const EventRankingFacade = require('../facade/eventRanking.facade');
 const { buildRankingEmbed, buildPagingRowRank, attachEventRankingPager } = require('../../../utils/ui/event_score');
 
 const PER_PAGE = 10;
@@ -13,19 +13,23 @@ module.exports = {
       o.setName('event_id').setDescription('ID del evento').setRequired(true)
     ),
   async execute(interaction, ctx) {
+    if (!ctx?.prisma) return interaction.reply("❌ Error DB.");
+    
     const eventId = interaction.options.getInteger('event_id', true);
     const perPage = PER_PAGE;
 
     await interaction.deferReply();
 
-    const bundle = await getEventRankingFirstPage({
-      prisma: ctx.prisma,
+    const facade = new EventRankingFacade(ctx.prisma);
+
+    const bundle = await facade.getRankingPage({
       eventId,
       perPage,
+      page: 1
     });
 
     if (!bundle.event) {
-      return interaction.editReply({ content: '❌ Ese evento no existe.' });
+      return interaction.editReply({ content: '❌ Ese evento no existe o no se encontró.' });
     }
 
     const embed = buildRankingEmbed({

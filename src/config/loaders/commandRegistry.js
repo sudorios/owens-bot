@@ -61,7 +61,6 @@ function loadCommands(client) {
       if (cmd.data.type === 'prefix') {
         const key = String(cmd.data.name).toLowerCase();
         client.prefixCommands.set(key, cmd);
-        console.log(`[commands] Prefix cargado: ${key}`);
         continue;
       }
 
@@ -69,7 +68,6 @@ function loadCommands(client) {
       if (typeof cmd.data.toJSON === 'function') {
         client.commands.set(cmd.data.name, cmd);
         slashPayload.push(cmd.data.toJSON());
-        console.log(`[commands] Slash cargado: ${cmd.data.name}`);
       } else {
         console.warn(`[commands] ${name} parece slash pero no tiene .toJSON()`);
       }
@@ -79,7 +77,6 @@ function loadCommands(client) {
  
   for (const basePath of commandPaths) {
     if (fs.existsSync(basePath)) {
-      console.log(`[commands] Escaneando: ${basePath}`);
       walk(basePath);
     } else {
       console.warn(`[commands] Directorio no encontrado: ${basePath}`);

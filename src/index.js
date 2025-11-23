@@ -39,10 +39,6 @@ async function maybeRegisterCommands() {
 
 loadEvents(client);
 
-client.once('ready', () => {
-  console.log(`🤖 Bot conectado como ${client.user.tag}`);
-});
-
 process.on('SIGINT', async () => {
   try { await prisma.$disconnect(); } catch {}
   client.destroy();

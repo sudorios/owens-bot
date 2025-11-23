@@ -1,43 +1,41 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { getEventWinnersBundle } = require('../service/eventWinner.service');
-const { getInternalGuildId } = require('../repository/guild.repo');
-const { buildWinnersEmbed, buildPagingRowWinners, attachEventWinnersPager } = require('../../../utils/ui/event_winners');
+const { SlashCommandBuilder } = require("discord.js");
+const EventWinnerFacade = require("../facade/eventWinner.facade");
+const {
+  buildWinnersEmbed,
+  buildPagingRowWinners,
+  attachEventWinnersPager,
+} = require("../../../utils/ui/event_winners");
+
+const PER_PAGE = 10;
+const COLLECTOR_MS = 60_000;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('event-winners')
-    .setDescription('Muestra el ranking de ganadores de eventos')
-    .addIntegerOption(opt =>
-      opt.setName('pagina')
-        .setDescription('Número de página (opcional)')
-        .setMinValue(1)
-    ),
+    .setName("event-winners")
+    .setDescription("Muestra el ranking de ganadores de eventos")
+    .addIntegerOption((opt) => opt.setName("pagina").setDescription("Número de página (opcional)").setMinValue(1)),
 
-  async execute(interaction, { prisma }) {
+  async execute(interaction, ctx) {
+    if (!ctx?.prisma) return interaction.reply("❌ Error DB.");
+
     await interaction.deferReply();
 
-    const discordGuildId = interaction.guildId ? BigInt(interaction.guildId) : null;
-    if (!discordGuildId) {
-      return interaction.editReply('❌ No se pudo identificar el servidor.');
-    }
+    const guildIdStr = interaction.guildId;
+    const perPage = PER_PAGE;
+    const requestedPage = interaction.options.getInteger("pagina") ?? 1;
 
-    let guildInternalId;
-    try {
-      guildInternalId = await getInternalGuildId(prisma, discordGuildId);
-    } catch (err) {
-      console.error(err);
-      return interaction.editReply('❌ Este servidor no está registrado en la base de datos.');
-    }
+    const facade = new EventWinnerFacade(ctx.prisma);
 
-    const perPage = 10;
-    const requestedPage = interaction.options.getInteger('pagina') ?? 1;
-
-    const bundle = await getEventWinnersBundle({
-      prisma,
-      guildInternalId,
+    const bundle = await facade.getWinnersPage({
+      guildIdStr,
       perPage,
       page: requestedPage,
     });
+
+    if (bundle.total === 0) {
+      if (bundle.error) console.error(bundle.description);
+      return interaction.editReply("ℹ️ No hay ganadores registrados en este servidor.");
+    }
 
     const embed = buildWinnersEmbed({
       description: bundle.description,
@@ -46,14 +44,14 @@ module.exports = {
       total: bundle.total,
     });
 
-    const row = bundle.totalPages > 1
-      ? buildPagingRowWinners({
-          guildInternalId,
-          perPage,
-          page: bundle.page,
-          totalPages: bundle.totalPages,
-        })
-      : null;
+    const row =
+      bundle.totalPages > 1
+        ? buildPagingRowWinners({
+            perPage,
+            page: bundle.page,
+            totalPages: bundle.totalPages,
+          })
+        : null;
 
     const msg = await interaction.editReply({
       embeds: [embed],
@@ -64,8 +62,12 @@ module.exports = {
       attachEventWinnersPager({
         message: msg,
         interaction,
-        ctx: { prisma },
-        meta: bundle,
+        ctx,
+        meta: {
+          guildIdStr,
+          totalPages: bundle.totalPages,
+        },
+        ttlMs: COLLECTOR_MS,
       });
     }
   },

@@ -6,7 +6,7 @@ class QuestionRepository {
   _getQuestionTable(db) {
     return db.question || db.Question;
   }
-  
+
   _getOptionTable(db) {
     return db.question_option || db.QuestionOption || db.questionOption;
   }
@@ -14,12 +14,12 @@ class QuestionRepository {
   async findOpenDuplicateQuestion(tx, { eventId, text }) {
     const db = tx || this.prisma;
     return this._getQuestionTable(db).findFirst({
-      where: { 
-          event_id: Number(eventId), 
-          question: text.trim(),     
-          answer: null               
+      where: {
+        event_id: Number(eventId),
+        question: text.trim(),
+        answer: null,
       },
-      select: { question_id: true }, 
+      select: { question_id: true },
     });
   }
 
@@ -33,8 +33,8 @@ class QuestionRepository {
         question: text.trim(),
         points: safePoints,
         created: new Date(),
-        created_by: createdBy,                
-        updated: new Date(), 
+        created_by: createdBy,
+        updated: new Date(),
       },
     });
   }
@@ -42,20 +42,20 @@ class QuestionRepository {
   async createOptions(tx, questionId, options, createdBy) {
     const db = tx || this.prisma;
     const optTable = this._getOptionTable(db);
-    
+
     const data = options.map((label, index) => ({
-       question_id: Number(questionId),
-       index: index,
-       label: label,
-       created: new Date(),
-       created_by: createdBy,
-       enabled: true
+      question_id: Number(questionId),
+      index: index,
+      label: label,
+      created: new Date(),
+      created_by: createdBy,
+      enabled: true,
     }));
 
     if (optTable.createMany) {
-        await optTable.createMany({ data });
+      await optTable.createMany({ data });
     } else {
-        for (const d of data) await optTable.create({ data: d });
+      for (const d of data) await optTable.create({ data: d });
     }
   }
 
@@ -75,23 +75,23 @@ class QuestionRepository {
     return this._getQuestionTable(db).findFirst({
       where: { message_id: String(messageId) },
       include: {
-        question_options: { 
-          orderBy: { index: 'asc' } 
-        }
-      }
+        question_options: {
+          orderBy: { index: "asc" },
+        },
+      },
     });
   }
 
   async getOptionIdByIndex(tx, { questionId, index }) {
     const db = tx || this.prisma;
     const optTable = this._getOptionTable(db);
-    
+
     return optTable.findFirst({
-      where: { 
-        question_id: Number(questionId), 
-        index: Number(index) 
+      where: {
+        question_id: Number(questionId),
+        index: Number(index),
       },
-      select: { question_option_id: true, label: true } 
+      select: { question_option_id: true, label: true },
     });
   }
 
@@ -99,10 +99,10 @@ class QuestionRepository {
     const db = tx || this.prisma;
     return this._getQuestionTable(db).update({
       where: { question_id: Number(questionId) },
-      data: { 
-        answer: answerLabel, 
-        updated: new Date() 
-      }
+      data: {
+        answer: answerLabel,
+        updated: new Date(),
+      },
     });
   }
 }

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { ensureGuildAndUser } = require("../repository/event.repo.js");
-const { getMatchRatingsBundle } = require("../service/matchRating.service.js");
+const MatchRatingFacade = require("../facade/matchRating.facade");
+
 const {
   buildRatingsEmbed,
   buildPagingRowRatings,
@@ -11,33 +11,36 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("match-ratings")
     .setDescription("Muestra las luchas calificadas en este servidor")
-    .addIntegerOption(opt =>
-      opt.setName("por-pagina")
+    .addIntegerOption((opt) =>
+      opt
+        .setName("por-pagina")
         .setDescription("Cantidad de luchas por página (default: 5)")
         .setMinValue(1)
         .setMaxValue(20)
     ),
 
   async execute(interaction, ctx) {
+    if (!ctx?.prisma) return interaction.reply("❌ Error DB.");
+
+    await interaction.deferReply();
+
     try {
-      const { guildInternalId } = await ensureGuildAndUser(ctx.prisma, {
+      const perPage = interaction.options.getInteger("por-pagina") || 5;
+      
+      const facade = new MatchRatingFacade(ctx.prisma);
+
+      const bundle = await facade.getRatingsBundle({
         guildIdStr: interaction.guild.id,
         guildName: interaction.guild.name,
         discordUserId: interaction.user.id,
         username: interaction.user.username,
-      });
-
-      const perPage = interaction.options.getInteger("por-pagina") || 5;
-
-      const bundle = await getMatchRatingsBundle({
-        prisma: ctx.prisma,
-        guildId: guildInternalId,
-        perPage,
         page: 1,
+        perPage,
       });
 
       if (bundle.total === 0) {
-        return interaction.reply("ℹ️ Aún no hay luchas calificadas en este servidor.");
+        if (bundle.error) console.error(bundle.description);
+        return interaction.editReply("ℹ️ Aún no hay luchas calificadas en este servidor.");
       }
 
       const embed = buildRatingsEmbed({
@@ -53,22 +56,23 @@ module.exports = {
         totalPages: bundle.totalPages,
       });
 
-      const reply = await interaction.reply({
+      const reply = await interaction.editReply({
         embeds: [embed],
         components: bundle.totalPages > 1 ? [row] : [],
-        fetchReply: true,
       });
 
-      attachMatchRatingsPager({
-        message: reply,
-        interaction,
-        ctx,
-        meta: bundle,
-        guildId: guildInternalId,
-      });
+      if (bundle.totalPages > 1) {
+        attachMatchRatingsPager({
+          message: reply,
+          interaction,
+          ctx,
+          meta: bundle,
+          guildIdStr: interaction.guild.id, 
+        });
+      }
     } catch (err) {
       console.error("[/match-ratings] ERROR:", err);
-      await interaction.reply("❌ Ocurrió un error al mostrar las luchas calificadas.");
+      await interaction.editReply("❌ Ocurrió un error al mostrar las luchas calificadas.");
     }
   },
 };
