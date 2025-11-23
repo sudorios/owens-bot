@@ -1,23 +1,23 @@
-const { EmbedBuilder } = require('discord.js');
-const { getGuildRankingBundle } = require('../../domain/guildUser.service');
-const { makeCollector, parseCid, buildPagingRowGeneric } = require('./shared');
+const { EmbedBuilder } = require("discord.js");
+const GuildRankingFacade = require("../../app/core/facade/guildRanking.facade");
+const { makeCollector, parseCid, clamp, buildPagingRowGeneric } = require("./shared");
 
-const PREFIX = 'grank'; 
+const RANK_PREFIX = "grank";
 
 function buildGuildRankingEmbed({ guild, description, page, totalPages, total }) {
   return new EmbedBuilder()
-    .setTitle(`🌐 Ranking Global — ${guild.name}`)
+    .setTitle(`🏆 Ranking Global: ${guild.name}`)
     .setDescription(description)
-    .setFooter({ text: `Página ${page}/${totalPages} • Participantes: ${total}` })
-    .setColor(0x1ABC9C)
-    .setTimestamp(new Date());
+    .setColor(0xffd700)
+    .setFooter({ text: `Página ${page}/${totalPages} • Top ${total} miembros` })
+    .setTimestamp();
 }
 
 function buildPagingRowGuildRank({ page, totalPages, perPage }) {
   return buildPagingRowGeneric(
-    PREFIX,
-    ['prev', page, perPage],
-    ['next', page, perPage],
+    RANK_PREFIX,
+    ["prev", page, perPage],
+    ["next", page, perPage],
     page <= 1,
     page >= totalPages
   );
@@ -25,20 +25,26 @@ function buildPagingRowGuildRank({ page, totalPages, perPage }) {
 
 function attachGuildRankingPager({ message, interaction, ctx, meta, ttlMs = 60_000 }) {
   return makeCollector({
-    message, interaction, prefix: PREFIX, ttlMs,
+    message,
+    interaction,
+    prefix: RANK_PREFIX,
+    ttlMs,
     onCollect: async (i) => {
-      const parts = parseCid(i.customId, PREFIX, 3);
+      const parts = parseCid(i.customId, RANK_PREFIX, 3);
       if (!parts) return i.deferUpdate().catch(() => {});
-      const [dir, pageStr, perStr] = parts;
-      const cur = Number(pageStr), per = Number(perStr);
-      const next = dir === 'prev' ? cur - 1 : cur + 1;
 
-      const bundle = await getGuildRankingBundle({
-        prisma: ctx.prisma,
-        discordGuildIdStr: meta.guildId,
+      const [dir, pageStr, perStr] = parts;
+      const cur = Number(pageStr),
+        per = Number(perStr);
+      const nextPage = clamp(dir === "prev" ? cur - 1 : cur + 1, 1, meta.totalPages);
+
+      const facade = new GuildRankingFacade(ctx.prisma);
+
+      const bundle = await facade.getRankingPage({
+        guildIdStr: meta.guildId,
         guildName: meta.guildName,
+        page: nextPage,
         perPage: per,
-        page: next,
       });
 
       const embed = buildGuildRankingEmbed({
@@ -48,6 +54,7 @@ function attachGuildRankingPager({ message, interaction, ctx, meta, ttlMs = 60_0
         totalPages: bundle.totalPages,
         total: bundle.total,
       });
+
       const row = buildPagingRowGuildRank({
         page: bundle.page,
         totalPages: bundle.totalPages,

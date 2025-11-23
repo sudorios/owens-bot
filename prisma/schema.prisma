@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -25,17 +26,17 @@ model catalog {
 }
 
 model event {
-  event_id   Int      @id(map: "Event_pkey") @default(autoincrement())
+  event_id   Int       @id(map: "Event_pkey") @default(autoincrement())
   guild_id   Int
   user_id    Int
   name       String
-  state_code String   @db.VarChar
-  created    DateTime @default(now())
-  updated    DateTime
+  state_code String    @db.VarChar
+  created    DateTime  @default(now())
+  updated    DateTime?
   season_id  Int?
   enabled    Boolean?
-  created_by String?  @db.VarChar
-  updated_by String?  @db.VarChar
+  created_by String?   @db.VarChar
+  updated_by String?   @db.VarChar
 
   @@index([guild_id], map: "Event_guildId_idx")
   @@index([season_id], map: "Event_seasonId_idx")
@@ -74,15 +75,15 @@ model event_rating_detail {
 }
 
 model event_score {
-  event_score_id Int      @id(map: "EventScore_pkey") @default(autoincrement())
+  event_score_id Int       @id(map: "EventScore_pkey") @default(autoincrement())
   user_id        Int
   guild_id       Int
   event_id       Int
   points         Int
-  created        DateTime @default(now())
-  updated        DateTime
-  created_by     String?  @db.VarChar
-  updated_by     String?  @db.VarChar
+  created        DateTime  @default(now())
+  updated        DateTime?
+  created_by     String?   @db.VarChar
+  updated_by     String?   @db.VarChar
   enabled        Boolean?
 }
 
@@ -101,29 +102,31 @@ model event_winner {
   @@unique([event_id, user_id], map: "EventWinner_eventId_userId_key")
 }
 
-model guild {
-  id         Int      @id(map: "Guild_pkey") @default(autoincrement())
-  guild_id   BigInt   @unique(map: "Guild_guildId_key")
+model Guild {
+  id         Int       @id(map: "Guild_pkey") @default(autoincrement())
+  guild_id   BigInt    @unique(map: "Guild_guildId_key")
   name       String
-  created    DateTime @default(now())
-  updated    DateTime
+  created    DateTime? @default(now())
+  updated    DateTime?
   enabled    Boolean?
-  created_by String?  @db.VarChar
-  updated_by String?  @db.VarChar
+  created_by String?   @db.VarChar
+  updated_by String?   @db.VarChar
+
+  @@map("guild")
 }
 
 model guild_user {
-  guild_user__id Int      @id(map: "GuildUser_pkey") @default(autoincrement())
-  guild_id       Int
-  user_id        Int
-  points         Int      @default(0)
-  last_position  Int      @default(0)
-  position       Int      @default(0)
-  created        DateTime @default(now())
-  updated        DateTime
-  enabled        Boolean?
-  created_by     String?  @db.VarChar
-  updated_by     String?  @db.VarChar
+  guild_user_id Int       @id(map: "GuildUser_pkey") @default(autoincrement())
+  guild_id      Int
+  user_id       Int
+  points        Int       @default(0)
+  last_position Int       @default(0)
+  position      Int       @default(0)
+  created       DateTime  @default(now())
+  updated       DateTime?
+  enabled       Boolean?
+  created_by    String?   @db.VarChar
+  updated_by    String?   @db.VarChar
 
   @@unique([guild_id, user_id], map: "GuildUser_guildId_userId_key")
   @@index([guild_id], map: "GuildUser_guildId_idx")
@@ -159,17 +162,17 @@ model match_rating_detail {
 }
 
 model prediction {
-  prediction_id Int      @id(map: "Prediction_pkey") @default(autoincrement())
+  prediction_id Int       @id(map: "Prediction_pkey") @default(autoincrement())
   user_id       Int
   guild_id      Int
   event_id      Int
   question_id   Int
   accuracy      Int
-  created       DateTime @default(now())
-  updated       DateTime
+  created       DateTime  @default(now())
+  updated       DateTime?
   option_id     Int?
-  created_by    String?  @db.VarChar
-  updated_by    String?  @db.VarChar
+  created_by    String?   @db.VarChar
+  updated_by    String?   @db.VarChar
   enabled       Boolean?
 
   @@unique([question_id, user_id], map: "Prediction_questionId_userId_key")
@@ -190,6 +193,8 @@ model question {
   enabled     Boolean?
   created_by  String?  @db.VarChar
   updated_by  String?  @db.VarChar
+
+  question_options question_option[]
 }
 
 model question_option {
@@ -203,36 +208,38 @@ model question_option {
   updated_by         String?   @db.VarChar
   enabled            Boolean?
 
+  question question @relation(fields: [question_id], references: [question_id])
+
   @@unique([question_id, index], map: "QuestionOption_questionId_index_key")
   @@index([question_id], map: "QuestionOption_questionId_idx")
 }
 
 model season {
-  season_id  Int      @id(map: "Season_pkey") @default(autoincrement())
+  season_id  Int       @id(map: "Season_pkey") @default(autoincrement())
   guild_id   Int
   name       String
-  start_date DateTime @default(now())
-  end_date   DateTime @default(now())
-  active     Boolean  @default(false)
-  created    DateTime @default(now())
-  updated    DateTime
-  created_by String?  @db.VarChar
-  updated_by String?  @db.VarChar
-  enabeld    Boolean?
+  start_date DateTime  @default(now())
+  end_date   DateTime  @default(now())
+  active     Boolean   @default(false)
+  created    DateTime  @default(now())
+  updated    DateTime?
+  created_by String?   @db.VarChar
+  updated_by String?   @db.VarChar
+  enabled    Boolean?  @default(true)
 }
 
 model season_score {
-  season_score_id Int      @id(map: "SeasonScore_pkey") @default(autoincrement())
+  season_score_id Int       @id(map: "SeasonScore_pkey") @default(autoincrement())
   season_id       Int
   user_id         Int
   guild_id        Int
   points          Int
-  created         DateTime @default(now())
-  updated         DateTime
-  last_position   Int      @default(0)
-  position        Int      @default(0)
-  created_by      String?  @db.VarChar
-  updated_by      String?  @db.VarChar
+  created         DateTime  @default(now())
+  updated         DateTime?
+  last_position   Int       @default(0)
+  position        Int       @default(0)
+  created_by      String?   @db.VarChar
+  updated_by      String?   @db.VarChar
   enabled         Boolean?
 
   @@unique([season_id, user_id], map: "SeasonScore_seasonId_userId_key")
@@ -249,4 +256,65 @@ model usuario {
   enabled    Boolean?
   created_by String?   @db.VarChar
   updated_by String?   @db.VarChar
+}
+
+view vw_guild_user {
+  guild_user_id BigInt
+  guild_id      Int
+  user_id       Int
+  points        Int
+  position      Int
+  last_position Int
+  username      String
+  user_dc_id    BigInt
+  guild         String
+  guild_dc_id   BigInt
+
+  @@map("vw_guild_user")
+}
+
+view vw_season_score {
+  season_score_id Int
+  points          Int
+  position        Int
+  last_position   Int
+  season_id       Int
+  user_id         Int
+  guild_id        Int
+  season          String
+  start_date      DateTime
+  end_date        DateTime?
+  active          Boolean
+  username        String
+  user_dc_id      BigInt
+  guild           String
+  guild_dc_id     BigInt
+
+  @@map("vw_season_score")
+}
+
+view vw_event_score {
+  event_score_id Int
+  user_id        Int
+  guild_id       Int
+  event_id       Int
+  points         Int
+  event          String
+  username       String
+  user_dc_id     BigInt
+  guild          String
+  guild_dc_id    BigInt
+
+  @@map("vw_event_score")
+}
+
+view vw_event_winners {
+  event_winner_id Int
+  guild_id        Int
+  points          Int
+  name            String
+  username        String
+  user_dc_id      BigInt
+  event_name      String
+  @@map("vw_event_winners")
 }

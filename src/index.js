@@ -2,11 +2,11 @@ require('dotenv').config();
 
 const { Client, REST, Routes } = require('discord.js');
 const { intents } = require('./config/intents');
-const loadEvents = require('./loaders/eventLoader');
+const loadEvents = require('./config/loaders/eventLoader');
 
-const { loadCommands } = require('./loaders/commandRegistry');
+const { loadCommands } = require('./config/loaders/commandRegistry');
 
-const { prisma } = require('./lib/prisma');
+const { prisma } = require('./config/lib/prisma');
 
 const client = new Client({ intents });
 client.ctx = { prisma };
@@ -38,10 +38,6 @@ async function maybeRegisterCommands() {
 }
 
 loadEvents(client);
-
-client.once('ready', () => {
-  console.log(`🤖 Bot conectado como ${client.user.tag}`);
-});
 
 process.on('SIGINT', async () => {
   try { await prisma.$disconnect(); } catch {}
