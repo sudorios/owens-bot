@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require("discord.js");
-const { getEventRatingsBundle } = require("../../domain/eventRating.service");
+const EventRatingFacade = require("../../app/config/facade/eventRating.facade");
 const { makeCollector, parseCid, clamp, buildPagingRowGeneric } = require("./shared");
 
 const PREFIX = "evrate";
@@ -14,16 +14,10 @@ function buildRatingsEmbed({ description, page, totalPages, total }) {
 }
 
 function buildPagingRowRatings({ perPage, page, totalPages }) {
-  return buildPagingRowGeneric(
-    PREFIX,
-    ["prev", page, perPage],
-    ["next", page, perPage],
-    page <= 1,
-    page >= totalPages
-  );
+  return buildPagingRowGeneric(PREFIX, ["prev", page, perPage], ["next", page, perPage], page <= 1, page >= totalPages);
 }
 
-function attachEventRatingsPager({ message, interaction, ctx, meta, guildId, ttlMs = 60_000 }) {
+function attachEventRatingsPager({ message, interaction, ctx, meta, guildIdStr, ttlMs = 60_000 }) {
   return makeCollector({
     message,
     interaction,
@@ -40,12 +34,20 @@ function attachEventRatingsPager({ message, interaction, ctx, meta, guildId, ttl
       const nextPage = clamp(dir === "prev" ? cur - 1 : cur + 1, 1, meta.totalPages);
 
       try {
-        const bundle = await getEventRatingsBundle({
-          prisma: ctx.prisma,
-          guildId,
+        const facade = new EventRatingFacade(ctx.prisma);
+
+        const bundle = await facade.getRatingsBundle({
+          guildIdStr: guildIdStr,
+          guildName: interaction.guild.name,
+          discordUserId: i.user.id,
+          username: i.user.username,
           perPage: per,
           page: nextPage,
         });
+
+        if (bundle.error) {
+          return i.followUp({ content: "❌ Error al cargar la página.", ephemeral: true });
+        }
 
         const newEmbed = buildRatingsEmbed({
           description: bundle.description,
