@@ -1,26 +1,13 @@
-const {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  MessageFlags,
-} = require("discord.js");
-
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require("discord.js");
 const EventFacade = require("../facade/event.facade");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("newevent")
     .setDescription("Crea un nuevo evento en este servidor.")
-    .addStringOption(o =>
-      o.setName("name").setDescription("Nombre del evento").setRequired(true)
-    )
-    .addStringOption(o =>
-      o.setName("state")
-        .setDescription("Estado inicial")
-        .addChoices(
-          { name: "draft", value: "draft" },
-          { name: "open", value: "open" },
-          { name: "closed", value: "closed" },
-        )
+    .addStringOption((o) => o.setName("name").setDescription("Nombre del evento").setRequired(true))
+    .addStringOption((o) =>
+      o.setName("state").setDescription("Estado inicial").addChoices({ name: "draft", value: "draft" }, { name: "open", value: "open" }, { name: "closed", value: "closed" }),
     ),
 
   async execute(interaction, ctx) {
@@ -30,9 +17,7 @@ module.exports = {
       return interaction.reply("❌ No se recibió prisma en el contexto.");
     }
 
-    const canManage = interaction.memberPermissions?.has(
-      PermissionFlagsBits.ManageGuild
-    );
+    const canManage = interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild);
 
     if (!canManage) {
       return interaction.reply({
@@ -58,8 +43,6 @@ module.exports = {
       return interaction.editReply(`❌ Error: ${res.message}`);
     }
 
-    return interaction.editReply(
-      `✅ Evento creado: **${res.data.name}**`
-    );
+    return interaction.editReply(`✅ Evento creado: **${res.data.name}**`);
   },
 };

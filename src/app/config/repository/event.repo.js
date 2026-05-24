@@ -1,3 +1,5 @@
+const { STATE_EVENT } = require("../../../utils/constants");
+
 class EventRepository {
   constructor(prisma) {
     this.prisma = prisma;
@@ -21,7 +23,7 @@ class EventRepository {
         user_id: userInternalId,
         season_id: seasonId,
         name: name,
-        state_code: "ESEV001",
+        state_code: STATE_EVENT.ACTIVE,
         enabled: true,
         created: new Date(),
         created_by: createdBy,

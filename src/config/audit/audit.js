@@ -10,7 +10,7 @@ function register(prisma) {
 
     if (action === "create") {
       params.args.data.created ??= now;
-      params.args.data.enabled ??= true; // <-- ajustado al typo de tu modelo
+      params.args.data.enabled ??= true;
       params.args.data.created_by ??= SYSTEM_USER_ID;
     }
 

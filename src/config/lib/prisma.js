@@ -3,7 +3,11 @@ const { register } = require("../audit/audit");
 
 const globalForPrisma = globalThis;
 
-const prisma = globalForPrisma.prisma || new PrismaClient();
+const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    //log: ['query', 'info', 'warn', 'error'],
+  });
 
 if (!prisma._auditMiddlewareRegistered) {
   register(prisma);

@@ -12,15 +12,13 @@ module.exports = {
     .addIntegerOption((o) => o.setName("hours").setDescription("Duración en horas (1-768)")),
 
   async execute(interaction, ctx) {
-    
     if (!ctx?.prisma) return interaction.reply("❌ Error DB.");
 
     const canManage = interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild);
     if (!canManage) return interaction.reply({ content: "⛔ Necesitas Manage Server.", flags: MessageFlags.Ephemeral });
 
     const channel = interaction.channel;
-    if (!channel || !channel.isTextBased?.())
-      return interaction.reply({ content: "⛔ Canal inválido.", flags: MessageFlags.Ephemeral });
+    if (!channel || !channel.isTextBased?.()) return interaction.reply({ content: "⛔ Canal inválido.", flags: MessageFlags.Ephemeral });
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -68,7 +66,7 @@ module.exports = {
 
       await interaction.editReply({
         content: [
-          "✅ **Pregunta creada**",
+          "**Pregunta creada**",
           `• ID: **${question.question_id}**`,
           `• Poll publicado: <#${channel.id}>`,
           `• Puntos: **${question.points}**`,

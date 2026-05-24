@@ -1,6 +1,7 @@
 const GuildUserRepository = require("../../core/repository/guildUser.repo");
 const SeasonRepository = require("../repository/season.repo");
 const EventRepository = require("../repository/event.repo");
+const { STATE_LABELS_SPANISH, STATE_EVENT } = require("../../../utils/constants");
 
 class EventService {
   constructor(prisma) {
@@ -13,7 +14,7 @@ class EventService {
     this.eventRepo = new EventRepository(prisma);
   }
 
-  async createEvent({ guildIdStr, guildName, discordUserId, username, name, state = "draft" }) {
+  async createEvent({ guildIdStr, guildName, discordUserId, username, name }) {
     return this.prisma.$transaction(async (tx) => {
       const { guildInternalId, userInternalId } = await this.guildUserRepo.createGuildUser(tx, {
         guildIdStr,
@@ -34,7 +35,7 @@ class EventService {
         seasonId: activeSeason.season_id,
         name: name.trim(),
         createdBy: username,
-        state,
+        state: STATE_EVENT.ACTIVE,
       });
     });
   }
@@ -53,12 +54,16 @@ class EventService {
     const totalPages = Math.ceil(total / perPage) || 1;
     const safePage = Math.max(1, Math.min(page, totalPages));
     const skip = (safePage - 1) * perPage;
-    const rows = await this.eventRepo.listEventsForSeason(this.prisma, {
+    const rawRows = await this.eventRepo.listEventsForSeason(this.prisma, {
       seasonId: activeSeason.season_id,
       guildInternalId: guild.id,
       skip,
       take: perPage,
     });
+    const rows = rawRows.map((row) => ({
+      ...row,
+      state: STATE_LABELS_SPANISH[row.state] || row.state,
+    }));
     return {
       season: activeSeason,
       rows,
