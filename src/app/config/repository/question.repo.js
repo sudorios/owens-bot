@@ -95,14 +95,19 @@ class QuestionRepository {
     });
   }
 
-  async closeQuestion(tx, { questionId, answerLabel }) {
+  async closeQuestion(tx, { questionId, answerLabel, points }) {
     const db = tx || this.prisma;
+    const dataToUpdate = {
+      answer: answerLabel,
+      updated: new Date(),
+    };
+    if (points !== undefined) {
+      dataToUpdate.points = points;
+    }
+
     return this._getQuestionTable(db).update({
       where: { question_id: Number(questionId) },
-      data: {
-        answer: answerLabel,
-        updated: new Date(),
-      },
+      data: dataToUpdate,
     });
   }
 }
