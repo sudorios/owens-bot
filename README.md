@@ -45,4 +45,4 @@ Construido con:
 - `/rate-match`: Crea una votación para calificar una lucha.
 - `/season-info`: Muestra la season activa del servidor.
 
-# demo-project
+
