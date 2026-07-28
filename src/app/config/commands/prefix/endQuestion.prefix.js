@@ -13,17 +13,19 @@ module.exports = {
 
     const parts = msg.content.trim().split(/\s+/);
     const rawIndex = Number(parts[1]);
+    const rawPoints = parts[2] !== undefined ? Number(parts[2]) : 1;
 
-    if (!Number.isInteger(rawIndex)) return msg.reply("⚠️ Usa: `!endquestion <index>` (ej: !endquestion 1)");
+    if (!Number.isInteger(rawIndex)) return msg.reply("⚠️ Usa: `!endquestion <index> [puntos]` (ej: !endquestion 1 2)");
+    if (!Number.isInteger(rawPoints) || rawPoints < 0) return msg.reply("⚠️ Los puntos deben ser un número entero válido (≥0).");
 
     const refId = msg.reference?.messageId;
-    if (!refId) return msg.reply("⚠️ Responde al mensaje de la pregunta (Poll) para cerrarla.");
+    if (!refId) return msg.reply("Responde al mensaje de la pregunta (Poll) para cerrarla.");
 
     let refMsg;
     try {
       refMsg = await msg.channel.messages.fetch(refId);
     } catch (e) {
-      return msg.reply("⚠️ No pude leer el mensaje referenciado.");
+      return msg.reply("No pude leer el mensaje referenciado.");
     }
 
     const q = await prisma.question.findFirst({
@@ -36,12 +38,12 @@ module.exports = {
     });
 
     if (!q) return msg.reply("❌ No encontré la Question vinculada a este mensaje.");
-    if (q.answer) return msg.reply(`🛑 Ya estaba cerrada con respuesta: **${q.answer}**.`);
+    if (q.answer) return msg.reply(`Ya estaba cerrada con respuesta: **${q.answer}**.`);
 
     let ingestInfo = { saved: 0 };
 
     if (refMsg.poll) {
-      const statusMsg = await msg.reply("⏳ Leyendo votos de la Poll...");
+      const statusMsg = await msg.reply("Leyendo votos de la Poll...");
 
       const predFacade = new PredictionFacade(prisma);
 
@@ -71,6 +73,7 @@ module.exports = {
       questionId: q.question_id,
       correctIndex: correctIndex,
       rawVotes: [],
+      points: rawPoints,
     });
 
     if (resolveRes.error) {
@@ -80,11 +83,11 @@ module.exports = {
     const summary = resolveRes.data;
 
     return msg.reply(
-      `✅ **Pregunta Cerrada**\n` +
+      `**Pregunta Cerrada**\n` +
         `• Respuesta: **${summary.ansLabel}**\n` +
         `• Votos nuevos guardados: **${ingestInfo.saved}**\n` +
         `• Ganadores totales: **${summary.winners}**\n` +
-        `• Puntos entregados: **${summary.delta}**`
+        `• Puntos entregados: **${summary.delta}**`,
     );
   },
 };

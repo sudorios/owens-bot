@@ -1,12 +1,12 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const { Client, REST, Routes } = require('discord.js');
-const { intents } = require('./config/intents');
-const loadEvents = require('./config/loaders/eventLoader');
+const { Client, REST, Routes } = require("discord.js");
+const { intents } = require("./config/intents");
+const loadEvents = require("./config/loaders/eventLoader");
 
-const { loadCommands } = require('./config/loaders/commandRegistry');
+const { loadCommands } = require("./config/loaders/commandRegistry");
 
-const { prisma } = require('./config/lib/prisma');
+const { prisma } = require("./config/lib/prisma");
 
 const client = new Client({ intents });
 client.ctx = { prisma };
@@ -14,33 +14,32 @@ client.ctx = { prisma };
 const commandsJson = loadCommands(client);
 
 async function maybeRegisterCommands() {
-  if (process.env.REGISTER_COMMANDS_ON_START !== 'true') return;
+  if (process.env.REGISTER_COMMANDS_ON_START !== "true") return;
   const appId = process.env.CLIENT_ID;
   if (!appId) {
-    console.error('❌ Falta CLIENT_ID en .env para registrar comandos.');
+    console.error("❌ Falta CLIENT_ID en .env para registrar comandos.");
     return;
   }
-  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+  const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
   try {
     if (process.env.GUILD_ID) {
-      await rest.put(
-        Routes.applicationGuildCommands(appId, process.env.GUILD_ID),
-        { body: commandsJson }
-      );
+      await rest.put(Routes.applicationGuildCommands(appId, process.env.GUILD_ID), { body: commandsJson });
       console.log(`✅ Slash commands registrados en guild ${process.env.GUILD_ID}`);
     } else {
       await rest.put(Routes.applicationCommands(appId), { body: commandsJson });
-      console.log('🌍 Slash commands registrados globalmente (propagación ~1h).');
+      console.log("Slash commands registrados globalmente (propagación ~1h).");
     }
   } catch (err) {
-    console.error('❌ Error registrando slash commands:', err);
+    console.error("❌ Error registrando slash commands:", err);
   }
 }
 
 loadEvents(client);
 
-process.on('SIGINT', async () => {
-  try { await prisma.$disconnect(); } catch {}
+process.on("SIGINT", async () => {
+  try {
+    await prisma.$disconnect();
+  } catch {}
   client.destroy();
   process.exit(0);
 });
@@ -50,7 +49,7 @@ process.on('SIGINT', async () => {
     await client.login(process.env.DISCORD_TOKEN);
     await maybeRegisterCommands();
   } catch (err) {
-    console.error('❌ Error al iniciar el bot:', err);
+    console.error("❌ Error al iniciar el bot:", err);
     process.exit(1);
   }
 })();

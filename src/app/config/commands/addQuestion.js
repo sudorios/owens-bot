@@ -7,28 +7,22 @@ module.exports = {
     .setDescription("Crea una pregunta y publica un Poll nativo.")
     .addIntegerOption((o) => o.setName("eventid").setDescription("ID del evento existente").setRequired(true))
     .addStringOption((o) => o.setName("text").setDescription("Texto de la pregunta").setRequired(true))
-    .addIntegerOption((o) => o.setName("points").setDescription("Puntos (default 1)"))
-    .addStringOption((o) => o.setName("options").setDescription("Opciones separadas por coma (Ej: Si, No)"))
-    .addIntegerOption((o) => o.setName("hours").setDescription("Duración en horas (1-768)")),
+    .addStringOption((o) => o.setName("options").setDescription("Opciones separadas por coma (Ej: Si, No)")),
 
   async execute(interaction, ctx) {
-    
     if (!ctx?.prisma) return interaction.reply("❌ Error DB.");
 
     const canManage = interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild);
     if (!canManage) return interaction.reply({ content: "⛔ Necesitas Manage Server.", flags: MessageFlags.Ephemeral });
 
     const channel = interaction.channel;
-    if (!channel || !channel.isTextBased?.())
-      return interaction.reply({ content: "⛔ Canal inválido.", flags: MessageFlags.Ephemeral });
+    if (!channel || !channel.isTextBased?.()) return interaction.reply({ content: "⛔ Canal inválido.", flags: MessageFlags.Ephemeral });
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const eventId = interaction.options.getInteger("eventid", true);
     const text = interaction.options.getString("text", true);
-    const points = interaction.options.getInteger("points");
     const optionsRaw = interaction.options.getString("options");
-    const hours = interaction.options.getInteger("hours");
     const username = interaction.user.username;
     const facade = new QuestionFacade(ctx.prisma);
 
@@ -39,9 +33,7 @@ module.exports = {
       username,
       eventId,
       text,
-      points,
       options: optionsRaw,
-      hours,
     });
 
     if (res.error) {
@@ -68,7 +60,7 @@ module.exports = {
 
       await interaction.editReply({
         content: [
-          "✅ **Pregunta creada**",
+          "**Pregunta creada**",
           `• ID: **${question.question_id}**`,
           `• Poll publicado: <#${channel.id}>`,
           `• Puntos: **${question.points}**`,

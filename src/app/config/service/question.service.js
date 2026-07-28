@@ -30,9 +30,9 @@ class QuestionService {
     const pts = points != null ? Number(points) : 1;
     if (!Number.isFinite(pts) || pts < 0) throw new Error("points debe ser ≥ 0.");
     const opts = this._sanitizeOptions(options);
-    let hrs = hours != null ? Number(hours) : 24;
-    if (!Number.isFinite(hrs) || hrs < 1) hrs = 24;
-    if (hrs > 768) hrs = 768;
+    let hrs = hours != null ? Number(hours) : 168;
+    if (!Number.isFinite(hrs) || hrs < 1) hrs = 168;
+    if (hrs > 168) hrs = 168;
     return { eventId: eid, text: text.trim(), points: pts, options: opts, pollDurationHours: hrs };
   }
 
@@ -77,7 +77,7 @@ class QuestionService {
     return this.repo.attachMessageMeta(this.prisma, { questionId, messageId, channelId });
   }
 
-  async resolveQuestion({ questionId, correctIndex }) {
+  async resolveQuestion({ questionId, correctIndex, points }) {
     return this.prisma.$transaction(async (tx) => {
       const q = await this.repo._getQuestionTable(tx).findUnique({
         where: { question_id: Number(questionId) },
@@ -98,7 +98,7 @@ class QuestionService {
         winnerOptionId: winningOpt.question_option_id,
       });
 
-      const delta = q.points;
+      const delta = points !== undefined ? Number(points) : q.points;
       const seasonId = await this.eventRepo.getSeasonIdByEventId(tx, q.event_id);
 
       for (const w of winners) {
@@ -122,6 +122,7 @@ class QuestionService {
       await this.repo.closeQuestion(tx, {
         questionId: q.question_id,
         answerLabel: winningOpt.label,
+        points: delta,
       });
 
       return {

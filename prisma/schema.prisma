@@ -187,7 +187,7 @@ model question {
   answer      String?
   points      Int
   created     DateTime @default(now())
-  updated     DateTime
+  updated     DateTime?
   message_id  String?
   channel_id  String?
   enabled     Boolean?

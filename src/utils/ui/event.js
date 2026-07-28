@@ -1,20 +1,21 @@
 const { EmbedBuilder } = require("discord.js");
 const EventFacade = require("../../app/config/facade/event.facade");
 const { pad, makeCollector, parseCid, clamp, buildPagingRowGeneric } = require("./shared");
+const { STATE_LABELS_SPANISH } = require("../constants");
 
 const EV_PREFIX = "evinfo";
 
 function buildEventInfoTable(rows) {
-  const headers = [pad("ID", 4), pad("ST", 6), pad("NOMBRE", 20)];
-  const sep = "-".repeat(34);
-
+  const headers = [pad("ID", 4), pad("ESTADO", 10), pad("NOMBRE", 20)];
+  const sep = "-".repeat(40);
   const lines = rows.map((r) => {
     const id = pad(r.id, 4);
-    const state = pad((r.state_code || "-").substring(0, 6), 6);
+    const rawState = r.state_code || "-";
+    const translatedState = STATE_LABELS_SPANISH[rawState] || rawState;
+    const state = pad(translatedState.substring(0, 10), 10);
     const name = pad((r.name || "-").substring(0, 20), 20);
     return [id, state, name].join(" | ");
   });
-
   return "```text\n" + headers.join(" | ") + "\n" + sep + "\n" + (lines.join("\n") || "Sin eventos") + "\n```";
 }
 
@@ -45,7 +46,7 @@ function attachEventInfoPager({ message, interaction, ctx, meta, ttlMs = 60_000 
     ttlMs,
     onCollect: async (i) => {
       const parts = parseCid(i.customId, EV_PREFIX, 3);
-      if (!parts) return i.deferUpdate().catch(() => {});
+      if (!parts) return i.deferUpdate().catch(() => { });
 
       const [dir, pageStr, perStr] = parts;
       const cur = Number(pageStr);
