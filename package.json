@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "cross-env NODE_ENV=production node src/index.js",
+    "dev": "cross-env NODE_ENV=development node src/index.js",
+    "qa": "cross-env NODE_ENV=qa node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +14,7 @@
   "dependencies": {
     "@prisma/client": "^6.13.0",
     "canvas": "^3.2.3",
+    "cross-env": "^10.1.0",
     "crypto": "^1.0.1",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",

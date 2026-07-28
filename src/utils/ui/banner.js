@@ -136,10 +136,22 @@ async function generateWinnerBanner(event, winner, interaction) {
   const avatarCy = HEIGHT / 2;
   const avatarR = 55;
 
+  let displayName = winner.username;
+  
   try {
     const dcUser = await interaction.client.users.fetch(winner.user_dc_id.toString()).catch(() => null);
     if (dcUser) {
-      const avatarUrl = dcUser.displayAvatarURL({ extension: "png", size: 128 });
+      let avatarUrl = dcUser.displayAvatarURL({ extension: "png", size: 128 });
+      
+      if (interaction.guild) {
+        const member = await interaction.guild.members.fetch(winner.user_dc_id.toString()).catch(() => null);
+        if (member) {
+          displayName = member.displayName;
+          const memberAvatar = member.avatarURL({ extension: "png", size: 128 });
+          if (memberAvatar) avatarUrl = memberAvatar;
+        }
+      }
+
       const avatarImg = await loadImage(avatarUrl);
 
       context.save();
@@ -168,10 +180,10 @@ async function generateWinnerBanner(event, winner, interaction) {
   do {
     context.font = `bold ${fontSize}px sans-serif`;
     fontSize -= 2;
-  } while (context.measureText(winner.username).width > nameMaxWidth && fontSize > 20);
+  } while (context.measureText(displayName).width > nameMaxWidth && fontSize > 20);
 
   context.fillStyle = GOLD;
-  context.fillText(winner.username, nameX, 145);
+  context.fillText(displayName, nameX, 145);
 
   // ---- Badge de puntos (pill) ----
   const pointsText = `Puntaje Total: ${winner.points} pts`;

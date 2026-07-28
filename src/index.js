@@ -1,4 +1,7 @@
-require("dotenv").config();
+const path = require("path");
+const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : ".env";
+require("dotenv").config({ path: path.resolve(process.cwd(), envFile) });
+
 
 const { Client, REST, Routes } = require("discord.js");
 const { intents } = require("./config/intents");
@@ -42,6 +45,19 @@ process.on("SIGINT", async () => {
   } catch {}
   client.destroy();
   process.exit(0);
+});
+
+// Manejo Global de Errores para que el bot no se apague (Crash)
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("🚨 [Anti-Crash] Promesa rechazada no manejada:", promise, "Razón:", reason);
+});
+
+process.on("uncaughtException", (err, origin) => {
+  console.error("🚨 [Anti-Crash] Excepción no atrapada:", err, "Origen:", origin);
+});
+
+process.on("uncaughtExceptionMonitor", (err, origin) => {
+  console.error("🚨 [Anti-Crash] Monitor de excepción:", err, "Origen:", origin);
 });
 
 (async () => {
