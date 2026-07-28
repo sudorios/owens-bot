@@ -13,8 +13,10 @@ module.exports = {
 
     const parts = msg.content.trim().split(/\s+/);
     const rawIndex = Number(parts[1]);
+    const rawPoints = parts[2] !== undefined ? Number(parts[2]) : 1;
 
-    if (!Number.isInteger(rawIndex)) return msg.reply("⚠️ Usa: `!endquestion <index>` (ej: !endquestion 1)");
+    if (!Number.isInteger(rawIndex)) return msg.reply("⚠️ Usa: `!endquestion <index> [puntos]` (ej: !endquestion 1 2)");
+    if (!Number.isInteger(rawPoints) || rawPoints < 0) return msg.reply("⚠️ Los puntos deben ser un número entero válido (≥0).");
 
     const refId = msg.reference?.messageId;
     if (!refId) return msg.reply("Responde al mensaje de la pregunta (Poll) para cerrarla.");
@@ -71,6 +73,7 @@ module.exports = {
       questionId: q.question_id,
       correctIndex: correctIndex,
       rawVotes: [],
+      points: rawPoints,
     });
 
     if (resolveRes.error) {
