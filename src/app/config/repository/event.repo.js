@@ -36,7 +36,7 @@ class EventRepository {
     const db = tx || this.prisma;
     const event = await db.event.findUnique({
       where: { event_id: Number(eventId) },
-      select: { event_id: true, name: true },
+      select: { event_id: true, name: true, state_code: true },
     });
 
     if (event) {
@@ -122,6 +122,22 @@ class EventRepository {
       take,
     });
     return rows.map((r) => ({ ...r, id: r.event_id }));
+  }
+
+  async updateEventState(tx, eventId, stateCode) {
+    const db = tx || this.prisma;
+    return db.event.update({
+      where: { event_id: Number(eventId) },
+      data: { state_code: stateCode, updated: new Date() },
+    });
+  }
+
+  async getEventWinner(tx, eventId) {
+    const db = tx || this.prisma;
+    return db.vw_event_score.findFirst({
+      where: { event_id: Number(eventId) },
+      orderBy: { points: 'desc' },
+    });
   }
 }
 

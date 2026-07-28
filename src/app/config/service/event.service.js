@@ -72,6 +72,24 @@ class EventService {
       total,
     };
   }
+
+  async closeEvent(eventId) {
+    return this.prisma.$transaction(async (tx) => {
+      const event = await this.eventRepo.getEvent(tx, eventId);
+      if (!event) throw new Error("Evento no encontrado.");
+      
+      let alreadyClosed = false;
+      if (event.state_code === STATE_EVENT.FINISHED) {
+        alreadyClosed = true;
+      } else {
+        await this.eventRepo.updateEventState(tx, eventId, STATE_EVENT.FINISHED);
+      }
+      
+      const winner = await this.eventRepo.getEventWinner(tx, eventId);
+      
+      return { event, winner, alreadyClosed };
+    });
+  }
 }
 
 module.exports = EventService;

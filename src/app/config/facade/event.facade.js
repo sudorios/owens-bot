@@ -38,6 +38,22 @@ class EventFacade {
       };
     }
   }
+
+  async closeEvent(eventId) {
+    try {
+      const result = await this.service.closeEvent(eventId);
+      return {
+        error: false,
+        data: result,
+      };
+    } catch (err) {
+      console.error("[EventFacade] Error en closeEvent:", err.message);
+      return {
+        error: true,
+        message: err.message,
+      };
+    }
+  }
 }
 
 module.exports = EventFacade;
